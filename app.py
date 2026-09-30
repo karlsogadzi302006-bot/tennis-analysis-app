@@ -421,22 +421,13 @@ if not stats_a or not stats_b:
     st.stop()
 
 # ---------------------------------------------------------
-# 7. PROBABILITÉS & VALUEBET 1N2
+# 7. CALCUL PROPRE DES RATINGS & PROBABILITÉS (ALIGNEMENT FIXE)
 # ---------------------------------------------------------
-def get_weighted_winrate_vs_style(stats_player, target_style):
-    weighted_wins, weighted_total = 0.0, 0.0
-    for opp in stats_player['p_wins']['loser_name']:
-        sim_score = STYLE_SIMILARITY[target_style].get(player_styles_map.get(opp, "Polyvalent"), 0.3)
-        weighted_wins += 1.0 * sim_score
-        weighted_total += 1.0 * sim_score
-    for opp in stats_player['p_losses']['winner_name']:
-        sim_score = STYLE_SIMILARITY[target_style].get(player_styles_map.get(opp, "Polyvalent"), 0.3)
-        weighted_total += 1.0 * sim_score
-    return (weighted_wins / weighted_total) if weighted_total >= 1.0 else stats_player['overall_winrate']
-
+# 1. Calcul du matchup vs style adverse
 winrate_a_vs_b_style = get_weighted_winrate_vs_style(stats_a, stats_b['style'])
 winrate_b_vs_a_style = get_weighted_winrate_vs_style(stats_b, stats_a['style'])
 
+# 2. Matchs directs H2H
 clean_a, clean_b = clean_name(player_a), clean_name(player_b)
 h2h_matches = df_circuit[
     ((df_circuit['winner_clean'] == clean_a) & (df_circuit['loser_clean'] == clean_b)) |
@@ -447,32 +438,42 @@ h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
 h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
 total_h2h = len(h2h_matches)
 
+# 3. Ajustement de service selon la vitesse de la sous-surface
 serve_adj_a = (stats_a['pct_1st_won'] / 100.0) * stats_a['serve_weight']
 serve_adj_b = (stats_b['pct_1st_won'] / 100.0) * stats_b['serve_weight']
 
+# 4. Calcul strict des Ratings (A à gauche, B à droite)
 rating_a = (
-    (stats_a['surface_winrate'] * stats_a['avg_tourney_level'] * 320) + 
-    (winrate_a_vs_b_style * 200) + 
-    (stats_a['recent_form'] * 150) +
-    (serve_adj_a * 100)
+    (stats_a['surface_winrate'] * stats_a['avg_tourney_level'] * 320.0) + 
+    (winrate_a_vs_b_style * 200.0) + 
+    (stats_a['recent_form'] * 150.0) +
+    (serve_adj_a * 100.0)
 )
 
 rating_b = (
-    (stats_b['surface_winrate'] * stats_b['avg_tourney_level'] * 320) + 
-    (winrate_b_vs_a_style * 200) + 
-    (stats_b['recent_form'] * 150) +
-    (serve_adj_b * 100)
+    (stats_b['surface_winrate'] * stats_b['avg_tourney_level'] * 320.0) + 
+    (winrate_b_vs_a_style * 200.0) + 
+    (stats_b['recent_form'] * 150.0) +
+    (serve_adj_b * 100.0)
 )
 
+# 5. Différentiel H2H (Ajoute au vainqueur, retire au perdant)
 if total_h2h > 0:
-    rating_a += (h2h_a_wins - h2h_b_wins) * 30
-    rating_b += (h2h_b_wins - h2h_a_wins) * 30
+    h2h_diff = h2h_a_wins - h2h_b_wins
+    rating_a += h2h_diff * 25.0
+    rating_b -= h2h_diff * 25.0
 
-prob_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 500.0))
+# 6. Modèle Logistique : Si rating_a > rating_b => prob_a > 0.50
+delta_rating = rating_a - rating_b
+prob_a = 1.0 / (1.0 + 10.0 ** (-delta_rating / 400.0))
+
+# Marge de sécurité (entre 5% et 95%)
 prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
-cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
+# Cotes équitables
+cote_equitable_a = 1.0 / prob_a
+cote_equitable_b = 1.0 / prob_b
 
 # ---------------------------------------------------------
 # 8. AFFICHAGE DES CATEGORIES
