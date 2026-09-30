@@ -17,46 +17,55 @@ st.set_page_config(
 # 2. Styles CSS (Maintenant 'st' est bien défini)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
     
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Plus Jakarta Sans', sans-serif;
     }
     .stApp {
-        background: #0b0f19;
-        color: #f1f5f9;
+        background: #0d1117;
+        color: #f3f4f6;
     }
     
     /* En-tête principal */
     .main-title {
-        font-size: 1.6rem !important;
+        font-size: 1.7rem !important;
         font-weight: 800 !important;
-        background: linear-gradient(90deg, #38bdf8, #818cf8);
+        background: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 2px;
     }
     .sub-title {
-        color: #64748b;
+        color: #9ca3af;
         font-size: 0.85rem !important;
         margin-bottom: 16px;
     }
 
-    /* Titres de sections plus grands et lisibles */
+    /* Titres de sections */
     h2, h3, .stHeader {
-        font-size: 1.3rem !important;
-        font-weight: 700 !important;
-        color: #f8fafc !important;
-        margin-top: 18px !important;
-        margin-bottom: 10px !important;
+        font-size: 1.25rem !important;
+        font-weight: 800 !important;
+        color: #f9fafb !important;
+        margin-top: 20px !important;
+        margin-bottom: 12px !important;
+        border-bottom: 1px solid #1f2937;
+        padding-bottom: 6px;
     }
 
-    /* Cartes Joueurs */
-    .player-card {
-        background: #131a2b;
-        border: 1px solid #1e293b;
+    /* Cartes Joueurs - Distinguées par couleur */
+    .player-card-a {
+        background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+        border: 1px solid #6366f1;
         border-radius: 12px;
-        padding: 10px 12px;
+        padding: 10px 14px;
+        margin-bottom: 10px;
+    }
+    .player-card-b {
+        background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%);
+        border: 1px solid #10b981;
+        border-radius: 12px;
+        padding: 10px 14px;
         margin-bottom: 10px;
     }
     .player-header {
@@ -64,72 +73,82 @@ st.markdown("""
         justify-content: space-between;
         align-items: center;
     }
-    .player-name {
-        font-size: 1.1rem !important;
+    .player-name-a {
+        font-size: 1.15rem !important;
         font-weight: 800 !important;
-        color: #ffffff;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        color: #c084fc;
     }
-    .style-badge {
-        background: rgba(56, 189, 248, 0.15);
-        color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.3);
+    .player-name-b {
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+        color: #34d399;
+    }
+    .style-badge-a {
+        background: rgba(168, 85, 247, 0.2);
+        color: #e9d5ff;
+        border: 1px solid rgba(168, 85, 247, 0.4);
         padding: 4px 8px;
         border-radius: 6px;
         font-size: 0.72rem !important;
         font-weight: 700;
-        text-transform: uppercase;
+    }
+    .style-badge-b {
+        background: rgba(16, 185, 129, 0.2);
+        color: #a7f3d0;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem !important;
+        font-weight: 700;
     }
 
-    /* Métriques ajustées (fini les "..." tronqués) */
+    /* Métriques dynamiques */
     [data-testid="stMetric"] {
-        background: #182238 !important;
-        border: 1px solid #26334d !important;
-        border-radius: 8px !important;
+        background: #161e2e !important;
+        border: 1px solid #283548 !important;
+        border-radius: 10px !important;
         padding: 8px 6px !important;
         text-align: center !important;
         margin-bottom: 6px !important;
     }
     [data-testid="stMetricValue"] {
-        font-size: 1.15rem !important;
+        font-size: 1.2rem !important;
         font-weight: 800 !important;
-        color: #38bdf8 !important;
+        color: #f59e0b !important; /* Orange Néon pour faire ressortir les nombres */
         line-height: 1.2 !important;
     }
     [data-testid="stMetricLabel"] {
         font-size: 0.75rem !important;
         font-weight: 600 !important;
-        color: #94a3b8 !important;
-        white-space: normal !important; /* Autorise le passage à la ligne au lieu de tronquer */
+        color: #9ca3af !important;
+        white-space: normal !important;
         word-break: break-word !important;
     }
 
     /* Boîtes d'analyse */
     .analysis-box {
-        background: rgba(30, 41, 59, 0.6);
-        border-left: 4px solid #38bdf8;
+        background: rgba(31, 41, 55, 0.7);
+        border-left: 4px solid #f59e0b;
         border-radius: 8px;
         padding: 12px;
         margin-top: 8px;
         margin-bottom: 16px;
         font-size: 0.88rem !important;
         line-height: 1.4 !important;
-        color: #e2e8f0;
+        color: #f3f4f6;
     }
 
-    /* Cartes ValueBet */
+    /* ValueBet Cards */
     .ev-card-success {
-        background: rgba(34, 197, 94, 0.08);
-        border: 1px solid rgba(34, 197, 94, 0.4);
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid #10b981;
         border-radius: 10px;
         padding: 12px;
         margin-bottom: 10px;
     }
     .ev-card-danger {
-        background: rgba(239, 68, 68, 0.08);
-        border: 1px solid rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid #ef4444;
         border-radius: 10px;
         padding: 12px;
         margin-bottom: 10px;
@@ -434,23 +453,21 @@ prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
-
 # ---------------------------------------------------------
-# 6. AFFICHAGE : CARTES COMPARATIVES & MATCHUP
+# 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL
 # ---------------------------------------------------------
 col1, col2 = st.columns(2)
 
 with col1:
     st.markdown(f"""
-    <div class='player-card'>
+    <div class='player-card-a'>
         <div class='player-header'>
-            <div class='player-name'>{player_a}</div>
-            <div class='style-badge'>{stats_a['style']}</div>
+            <div class='player-name-a'>{player_a}</div>
+            <div class='style-badge-a'>{stats_a['style']}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Grille 2x2 pour des cases carrées et bien lisibles sur mobile
     g1, g2 = st.columns(2)
     g1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
     g2.metric(f"Vs {surface}", f"{stats_a['surface_winrate']*100:.0f}%")
@@ -459,15 +476,14 @@ with col1:
 
 with col2:
     st.markdown(f"""
-    <div class='player-card'>
+    <div class='player-card-b'>
         <div class='player-header'>
-            <div class='player-name'>{player_b}</div>
-            <div class='style-badge'>{stats_b['style']}</div>
+            <div class='player-name-b'>{player_b}</div>
+            <div class='style-badge-b'>{stats_b['style']}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Grille 2x2
     g1, g2 = st.columns(2)
     g1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
     g2.metric(f"Vs {surface}", f"{stats_b['surface_winrate']*100:.0f}%")
