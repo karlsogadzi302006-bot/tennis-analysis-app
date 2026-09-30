@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# STYLES CSS PERSONNALISÉS (MOBILE FIRST & HARMONISÉ)
+# STYLES CSS PERSONNALISÉS (MOBILE FIRST & FULL-WIDTH IMAGES)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -140,7 +140,7 @@ st.markdown("""
         margin-bottom: 10px;
     }
 
-    /* FORCER LES IMAGES SUR TOUTE LA LARGEUR DE L'ÉCRAN */
+    /* IMAGES PLEINE LARGEUR */
     [data-testid="stImage"] {
         width: 100% !important;
         margin-top: 10px !important;
@@ -277,7 +277,7 @@ player_b = st.sidebar.selectbox("🎾 Joueur B", all_players, index=default_b_id
 surface = st.sidebar.selectbox("🌱 Surface de jeu", ["Hard", "Clay", "Grass"])
 
 # ---------------------------------------------------------
-# 4. CALCULS METRIQUES & STYLES + NIVEAU DES TOURNOIS
+# 4. CALCULS METRIQUES & STYLES
 # ---------------------------------------------------------
 LEVEL_WEIGHTS = {'G': 2.2, 'M': 1.7, 'A': 1.2, 'C': 0.7, 'S': 0.5, 'D': 0.8}
 
@@ -354,12 +354,12 @@ def get_detailed_metrics(player, surface_match):
     w_surf = target_matches[target_matches['is_win'] == 1]
     l_surf = target_matches[target_matches['is_win'] == 0]
     
-    aces = pd.concat([w_surf['w_ace'], l_surf['l_ace']]).dropna()
-    dfs_count = pd.concat([w_surf['w_df'], l_surf['l_df'] if 'l_df' in l_surf else pd.Series([0])]).dropna()
+    aces = pd.concat([w_surf['w_ace'], l_surf['l_ace']]).dropna() if ('w_ace' in w_surf.columns and 'l_ace' in l_surf.columns) else pd.Series([0])
+    dfs_count = pd.concat([w_surf['w_df'], l_surf['l_df']]).dropna() if ('w_df' in w_surf.columns and 'l_df' in l_surf.columns) else pd.Series([0])
     
-    svpt = pd.concat([w_surf['w_svpt'], l_surf['l_svpt']]).sum()
-    fst_in = pd.concat([w_surf['w_1stin'], l_surf['l_1stin']]).sum()
-    fst_won = pd.concat([w_surf['w_1stwon'], l_surf['l_1stwon']]).sum()
+    svpt = pd.concat([w_surf['w_svpt'], l_surf['l_svpt']]).sum() if ('w_svpt' in w_surf.columns and 'l_svpt' in l_surf.columns) else 0
+    fst_in = pd.concat([w_surf['w_1stin'], l_surf['l_1stin']]).sum() if ('w_1stin' in w_surf.columns and 'l_1stin' in l_surf.columns) else 0
+    fst_won = pd.concat([w_surf['w_1stwon'], l_surf['l_1stwon']]).sum() if ('w_1stwon' in w_surf.columns and 'l_1stwon' in l_surf.columns) else 0
     
     pct_1st_in = (fst_in / svpt * 100) if svpt > 0 else 60.0
     pct_1st_won = (fst_won / fst_in * 100) if fst_in > 0 else 70.0
@@ -487,7 +487,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# BANNIÈRE 1 (NOCTURNE TENNIS - PLEINE LARGEUR)
+# BANNIÈRE 1
 st.image("https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
@@ -517,7 +517,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# BANNIÈRE 2 (IMAGE TENNIS REMPLAÇANT LA MONTAGNE - PLEINE LARGEUR)
+# BANNIÈRE 2
 st.image("https://images.unsplash.com/photo-1560012057-4372e14c5085?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
@@ -542,7 +542,7 @@ if total_h2h > 0:
 else:
     st.write("Aucune confrontation directe enregistrée.")
 
-# BANNIÈRE 3 (ACTION TENNIS - PLEINE LARGEUR)
+# BANNIÈRE 3
 st.image("https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
@@ -596,7 +596,7 @@ with r2:
     else:
         st.error("🔴 **Cote trop basse**")
 
-# BANNIÈRE 4 (BALLES DE TENNIS - PLEINE LARGEUR)
+# BANNIÈRE 4
 st.image("https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
