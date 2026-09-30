@@ -11,11 +11,11 @@ st.set_page_config(
     page_title="Tennis ValueBet AI — Analytics ATP",
     page_icon="🎾",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # ---------------------------------------------------------
-# STYLES CSS PERSONNALISÉS
+# STYLES CSS PERSONNALISÉS (MOBILE FIRST / COMPACT CÔTE À CÔTE)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -31,7 +31,7 @@ st.markdown("""
     
     /* Titres */
     .main-title {
-        font-size: 1.6rem;
+        font-size: 1.4rem;
         font-weight: 800;
         background: linear-gradient(90deg, #38bdf8, #818cf8);
         -webkit-background-clip: text;
@@ -40,27 +40,43 @@ st.markdown("""
     }
     .sub-title {
         color: #64748b;
-        font-size: 0.85rem;
-        margin-bottom: 20px;
+        font-size: 0.78rem;
+        margin-bottom: 12px;
     }
 
-    /* Chiffres des métriques Streamlit */
+    /* FORCE LES COLONNES CÔTE À CÔTE MÊME SUR MOBILE */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+    }
+    
+    [data-testid="stColumn"] {
+        min-width: 0 !important;
+        flex: 1 1 0% !important;
+    }
+
+    /* Chiffres des métriques Streamlit ajustés pour mobile */
     [data-testid="stMetricValue"] {
-        font-size: 1.2rem !important;
+        font-size: 0.95rem !important;
         font-weight: 700 !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 0.78rem !important;
+        font-size: 0.68rem !important;
         color: #94a3b8 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
 
-    /* Cartes Joueurs */
+    /* Cartes Joueurs Compactes */
     .player-card {
         background: #131722;
         border: 1px solid #1e293b;
-        border-radius: 10px;
-        padding: 10px 14px;
-        margin-bottom: 12px;
+        border-radius: 8px;
+        padding: 6px 8px;
+        margin-bottom: 6px;
     }
     
     .player-header {
@@ -69,18 +85,21 @@ st.markdown("""
         align-items: center;
     }
     .player-name {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         font-weight: 700;
         color: #f8fafc;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .style-badge {
         background: rgba(56, 189, 248, 0.1);
         color: #38bdf8;
         border: 1px solid rgba(56, 189, 248, 0.25);
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.72rem;
+        padding: 1px 5px;
+        border-radius: 8px;
+        font-size: 0.62rem;
         font-weight: 600;
         text-transform: uppercase;
     }
@@ -88,12 +107,12 @@ st.markdown("""
     /* Encadrés d'analyse contextuels */
     .analysis-box {
         background: rgba(30, 41, 59, 0.5);
-        border-left: 4px solid #38bdf8;
+        border-left: 3px solid #38bdf8;
         border-radius: 6px;
-        padding: 10px 14px;
-        margin-top: 10px;
-        margin-bottom: 15px;
-        font-size: 0.88rem;
+        padding: 8px 10px;
+        margin-top: 6px;
+        margin-bottom: 10px;
+        font-size: 0.8rem;
         color: #cbd5e1;
     }
 
@@ -102,21 +121,21 @@ st.markdown("""
         background: rgba(34, 197, 94, 0.05);
         border: 1px solid rgba(34, 197, 94, 0.3);
         border-radius: 8px;
-        padding: 10px 14px;
-        margin-bottom: 10px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
     }
     .ev-card-danger {
         background: rgba(239, 68, 68, 0.05);
         border: 1px solid rgba(239, 68, 68, 0.25);
         border-radius: 8px;
-        padding: 10px 14px;
-        margin-bottom: 10px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
     }
 
-    /* Images ajustées en hauteur */
+    /* Images ajustées pour mobile */
     [data-testid="stImage"] img {
-        border-radius: 10px;
-        max-height: 260px;
+        border-radius: 8px;
+        max-height: 120px;
         width: 100%;
         object-fit: cover;
     }
@@ -222,10 +241,8 @@ def load_all_local_atp():
 df_circuit = load_all_local_atp()
 
 if df_circuit.empty:
-    st.error("⚠️ Impossible d'extraire les données des fichiers CSV.")
+    st.error("⚠️️ Impossible d'extraire les données des fichiers CSV.")
     st.stop()
-
-st.sidebar.success(f"⚡ {len(df_circuit)} matchs ATP chargés !")
 
 # ---------------------------------------------------------
 # 3. SELECTION DES JOUEURS
@@ -297,7 +314,6 @@ def get_detailed_metrics(player, surface_match):
     last_10 = all_matches.head(10)
     recent_form = last_10['is_win'].mean() if len(last_10) > 0 else 0.5
     
-    # MATCHS SUR LA SURFACE SPECIFIQUE
     surf_wins = p_wins[p_wins['surface'] == surface_match]
     surf_losses = p_losses[p_losses['surface'] == surface_match]
     surf_matches = pd.concat([surf_wins.assign(is_win=1), surf_losses.assign(is_win=0)]).sort_values(by='tourney_date', ascending=False)
@@ -305,12 +321,10 @@ def get_detailed_metrics(player, surface_match):
     total_surf = len(surf_matches)
     surface_winrate = len(surf_wins) / total_surf if total_surf >= 3 else overall_winrate
     
-    # Utiliser les matchs sur la surface si suffisants, sinon l'historique récent global
     target_matches = surf_matches.head(12) if total_surf >= 5 else all_matches.head(12)
     
     titles = len(p_wins[p_wins['round'].astype(str).str.upper().isin(['F', 'THE FINAL', 'FINAL'])])
     
-    # Extraction des stats Ace & DF sur la surface ciblée
     w_surf = target_matches[target_matches['is_win'] == 1]
     l_surf = target_matches[target_matches['is_win'] == 0]
     
@@ -398,7 +412,7 @@ prob_b = 1.0 - prob_a
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
 
 # ---------------------------------------------------------
-# 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL
+# 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL (CÔTE À CÔTE SUR MOBILE)
 # ---------------------------------------------------------
 col1, col2 = st.columns(2)
 
@@ -413,10 +427,10 @@ with col1:
     """, unsafe_allow_html=True)
     
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Winrate Global", f"{stats_a['overall_winrate']*100:.1f}%")
-    m2.metric(f"Sur {surface}", f"{stats_a['surface_winrate']*100:.1f}%")
-    m3.metric("Forme (10d)", f"{stats_a['last_10_wins']}/10 V")
-    m4.metric(f"Vs '{stats_b['style']}'", f"{winrate_a_vs_b_style*100:.1f}%")
+    m1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
+    m2.metric(f"Vs {surface}", f"{stats_a['surface_winrate']*100:.0f}%")
+    m3.metric("Forme", f"{stats_a['last_10_wins']}/10")
+    m4.metric(f"Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
 
 with col2:
     st.markdown(f"""
@@ -429,18 +443,16 @@ with col2:
     """, unsafe_allow_html=True)
     
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Winrate Global", f"{stats_b['overall_winrate']*100:.1f}%")
-    m2.metric(f"Sur {surface}", f"{stats_b['surface_winrate']*100:.1f}%")
-    m3.metric("Forme (10d)", f"{stats_b['last_10_wins']}/10 V")
-    m4.metric(f"Vs '{stats_a['style']}'", f"{winrate_b_vs_a_style*100:.1f}%")
+    m1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
+    m2.metric(f"Vs {surface}", f"{stats_b['surface_winrate']*100:.0f}%")
+    m3.metric("Forme", f"{stats_b['last_10_wins']}/10")
+    m4.metric(f"Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
 
-# MINI-TEXTE : FAVORITISME SURFACE & FORME
 fav_surface = player_a if stats_a['surface_winrate'] >= stats_b['surface_winrate'] else player_b
 fav_form = player_a if stats_a['recent_form'] >= stats_b['recent_form'] else player_b
 st.markdown(f"""
 <div class='analysis-box'>
-    💡 <b>Analyse Surface & Forme :</b> Sur <b>{surface}</b>, l'avantage va à <b>{fav_surface}</b> ({max(stats_a['surface_winrate'], stats_b['surface_winrate'])*100:.1f}% de victoires sur cette surface). 
-    En terme de forme récente sur les 10 derniers matchs, <b>{fav_form}</b> prend le dessus.
+    💡 <b>Surface & Forme :</b> Avantage <b>{fav_surface}</b> sur {surface} ({max(stats_a['surface_winrate'], stats_b['surface_winrate'])*100:.0f}% V). Forme récente : <b>{fav_form}</b>.
 </div>
 """, unsafe_allow_html=True)
 
@@ -450,29 +462,27 @@ st.image("https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?q=80&w=12
 # ---------------------------------------------------------
 # 7. METRIQUES COMPACTES STYLE DE JEU
 # ---------------------------------------------------------
-st.subheader("📊 Profils & Service / Engagement")
+st.subheader("📊 Service & Engagement")
 
 s1, s2 = st.columns(2)
 with s1:
     p1, p2, p3, p4 = st.columns(4)
     p1.metric("Aces/m", f"{stats_a['avg_aces']:.1f}")
     p2.metric("DF/m", f"{stats_a['avg_dfs']:.1f}")
-    p3.metric("1ère In", f"{stats_a['pct_1st_in']:.1f}%")
-    p4.metric("Pts 1ère", f"{stats_a['pct_1st_won']:.1f}%")
+    p3.metric("1st In", f"{stats_a['pct_1st_in']:.0f}%")
+    p4.metric("Pts 1st", f"{stats_a['pct_1st_won']:.0f}%")
 
 with s2:
     p1, p2, p3, p4 = st.columns(4)
     p1.metric("Aces/m", f"{stats_b['avg_aces']:.1f}")
     p2.metric("DF/m", f"{stats_b['avg_dfs']:.1f}")
-    p3.metric("1ère In", f"{stats_b['pct_1st_in']:.1f}%")
-    p4.metric("Pts 1ère", f"{stats_b['pct_1st_won']:.1f}%")
+    p3.metric("1st In", f"{stats_b['pct_1st_in']:.0f}%")
+    p4.metric("Pts 1st", f"{stats_b['pct_1st_won']:.0f}%")
 
-# MINI-TEXTE : FAVORITISME SERVICE
 fav_serve = player_a if stats_a['pct_1st_won'] >= stats_b['pct_1st_won'] else player_b
 st.markdown(f"""
 <div class='analysis-box'>
-    ⚡ <b>Analyse au Service sur {surface} :</b> <b>{fav_serve}</b> possède le service le plus percutant avec <b>{max(stats_a['pct_1st_won'], stats_b['pct_1st_won']):.1f}%</b> de points gagnés derrière sa 1ère balle. 
-    Ce facteur est déterminant pour réduire le nombre de breaks concédés.
+    ⚡ <b>Service sur {surface} :</b> Avantage <b>{fav_serve}</b> ({max(stats_a['pct_1st_won'], stats_b['pct_1st_won']):.0f}% pts 1ère balle).
 </div>
 """, unsafe_allow_html=True)
 
@@ -484,11 +494,11 @@ st.image("https://images.unsplash.com/photo-1530915534664-4ac6423ca938?q=80&w=12
 # ---------------------------------------------------------
 st.subheader("⚔️ Face-à-Face Direct (H2H)")
 if total_h2h > 0:
-    st.info(f"Historique direct : **{player_a}** **{h2h_a_wins}** — **{h2h_b_wins}** **{player_b}** ({total_h2h} duels)")
+    st.info(f"H2H : **{player_a}** **{h2h_a_wins}** — **{h2h_b_wins}** **{player_b}** ({total_h2h} duels)")
     fav_h2h = player_a if h2h_a_wins > h2h_b_wins else (player_b if h2h_b_wins > h2h_a_wins else "Égalité")
     st.markdown(f"""
     <div class='analysis-box'>
-        🤝 <b>Analyse H2H :</b> <b>{fav_h2h}</b> mène l'historique direct des duels sur le circuit ATP ({max(h2h_a_wins, h2h_b_wins)} victoires sur {total_h2h} matchs).
+        🤝 <b>H2H :</b> <b>{fav_h2h}</b> mène le bilan direct ({max(h2h_a_wins, h2h_b_wins)} V sur {total_h2h} matchs).
     </div>
     """, unsafe_allow_html=True)
     
@@ -499,12 +509,7 @@ if total_h2h > 0:
             use_container_width=True
         )
 else:
-    st.write("Aucune confrontation directe enregistrée entre ces deux joueurs.")
-    st.markdown(f"""
-    <div class='analysis-box'>
-        ℹ️ <b>Analyse H2H :</b> Premier duel officiel entre ces deux joueurs. Le modèle se base à 100% sur la forme, le style et la surface.
-    </div>
-    """, unsafe_allow_html=True)
+    st.write("Aucune confrontation directe enregistrée.")
 
 # BANNIÈRE 3
 st.image("https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
@@ -512,7 +517,7 @@ st.image("https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?q=80&w=12
 # ---------------------------------------------------------
 # 9. DETECTEUR +EV ET CALCULATEUR VALUEBET
 # ---------------------------------------------------------
-st.subheader("🎯 ValueBet & Cotes 1N2 (+EV)")
+st.subheader("🎯 ValueBet 1N2 (+EV)")
 
 c1, c2 = st.columns(2)
 cote_a = c1.number_input(f"Cote {player_a}", value=float(round(cote_equitable_a, 2)), step=0.05)
@@ -530,12 +535,12 @@ with r1:
     css_class = "ev-card-success" if ev_a > 0 else "ev-card-danger"
     st.markdown(f"""
     <div class='{css_class}'>
-        <b>{player_a}</b> | Prob : <b>{prob_a*100:.1f}%</b> | Cote Fair : <b>{cote_equitable_a:.2f}</b>
+        <b>{player_a}</b> | Prob : <b>{prob_a*100:.1f}%</b> | Fair : <b>{cote_equitable_a:.2f}</b>
     </div>
     """, unsafe_allow_html=True)
     
     v1, v2 = st.columns(2)
-    v1.metric("EV (+EV)", f"{ev_a*100:+.1f}%")
+    v1.metric("EV", f"{ev_a*100:+.1f}%")
     v2.metric("Kelly", f"{min(kelly_a*100, 5.0):.1f}% BK")
 
     if ev_a > 0:
@@ -547,12 +552,12 @@ with r2:
     css_class = "ev-card-success" if ev_b > 0 else "ev-card-danger"
     st.markdown(f"""
     <div class='{css_class}'>
-        <b>{player_b}</b> | Prob : <b>{prob_b*100:.1f}%</b> | Cote Fair : <b>{cote_equitable_b:.2f}</b>
+        <b>{player_b}</b> | Prob : <b>{prob_b*100:.1f}%</b> | Fair : <b>{cote_equitable_b:.2f}</b>
     </div>
     """, unsafe_allow_html=True)
     
     v1, v2 = st.columns(2)
-    v1.metric("EV (+EV)", f"{ev_b*100:+.1f}%")
+    v1.metric("EV", f"{ev_b*100:+.1f}%")
     v2.metric("Kelly", f"{min(kelly_b*100, 5.0):.1f}% BK")
 
     if ev_b > 0:
@@ -566,9 +571,8 @@ st.image("https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?q=80&w=12
 # ---------------------------------------------------------
 # 10. ANALYSE AFFINÉE DES MARCHÉS ANNEXES
 # ---------------------------------------------------------
-st.subheader(f"🔥 Analyse Détaillée des Marchés Annexes sur {surface}")
+st.subheader(f"🔥 Marchés Annexes sur {surface}")
 
-# Calculs prédictifs filtrés
 combined_avg_games = (stats_a['avg_games'] + stats_b['avg_games']) / 2
 combined_3set_pct = (stats_a['pct_3_sets'] + stats_b['pct_3_sets']) / 2
 combined_tb_pct = (stats_a['pct_tb'] + stats_b['pct_tb']) / 2
@@ -579,7 +583,6 @@ total_projected_dfs = stats_a['avg_dfs'] + stats_b['avg_dfs']
 both_big_servers = (stats_a['style'] in ["Gros Serveur", "Serveur-Volleyeur"]) and (stats_b['style'] in ["Gros Serveur", "Serveur-Volleyeur"])
 both_returners = (stats_a['style'] in ["Relanceur / Cadenceur", "Contreur / Limeur"]) and (stats_b['style'] in ["Relanceur / Cadenceur", "Contreur / Limeur"])
 
-# Facteurs de domination et d'instabilité
 prob_fav = max(prob_a, prob_b)
 fav_player_name = player_a if prob_a > prob_b else player_b
 underdog_player_name = player_b if prob_a > prob_b else player_a
@@ -592,86 +595,70 @@ m1_col, m2_col = st.columns(2)
 with m1_col:
     # 1. OVER / UNDER JEUX
     with st.container(border=True):
-        st.markdown(f"#### 🎾 Over / Under Jeux (Spécifique {surface})")
+        st.markdown(f"#### 🎾 Over / Under Jeux ({surface})")
         
         j1, j2, j3 = st.columns(3)
-        j1.metric("Moy. Jeux/m", f"{combined_avg_games:.1f}")
-        j2.metric("Chances 3 Sets", f"{combined_3set_pct:.1f}%")
-        j3.metric("Freq. Tie-Break", f"{combined_tb_pct:.1f}%")
+        j1.metric("Moy. Jeux", f"{combined_avg_games:.1f}")
+        j2.metric("3 Sets", f"{combined_3set_pct:.0f}%")
+        j3.metric("Tie-Break", f"{combined_tb_pct:.0f}%")
 
         if is_heavy_blowout:
-            st.error(f"🔴 **DANGER OVER / PRÉVISION UNDER 21.5 JEUX**\n\n"
-                     f"• **Analyse de sur-domination :** **{fav_fav_name if 'fav_fav_name' in locals() else fav_player_name}** possède une trop grande marge sur {surface} ({prob_fav*100:.1f}% de chances). "
-                     f"Risque élevé de victoire expéditive (ex: 6-3, 6-2). L'Over est déconseillé.")
+            st.error(f"🔴 **PRÉVISION UNDER 21.5 JEUX**\n\n• **Blowout :** **{fav_player_name}** ultra fav ({prob_fav*100:.0f}%). Risque de 6-3 6-2.")
         elif is_unstable_match:
-            st.warning("⚠️ **OVER TRÈS RISQUÉ / INCONSTANCE**\n\n"
-                       f"• **Analyse d'instabilité :** Nombreuses doubles fautes et fautes directes au service ({total_projected_dfs:.1f} DF/m cumulées). "
-                       f"Les breaks sont fréquents, empêchant les sets de monter en 6-6/7-5.")
+            st.warning("⚠️ **OVER RISQUÉ / INCONSTANCE**\n\n• **Breaks fréquents :** Beaucoup de DF ({total_projected_dfs:.1f}/m).")
         elif combined_avg_games >= 23.0 or both_big_servers or combined_3set_pct >= 45:
-            st.success("🟢 **RECOMMANDATION : OVER 22.5 JEUX**\n\n"
-                       f"• **Analyse :** Profils équilibrés sur {surface} avec un fort taux d'accrochage ({combined_3set_pct:.0f}% de 3ème set). "
-                       f"Match serré en perspective.")
+            st.success("🟢 **RECOMMANDATION : OVER 22.5 JEUX**\n\n• **Serré :** Fort accrochage ({combined_3set_pct:.0f}% de 3 sets).")
         elif combined_avg_games <= 20.5 or both_returners:
-            st.warning("⚡ **RECOMMANDATION : UNDER 21.5 JEUX**\n\n"
-                       f"• **Analyse :** Deux profil de relanceurs/cont reurs. Breaks réguliers projetés ramenant la moyenne sous 21 jeux.")
+            st.warning("⚡ **RECOMMANDATION : UNDER 21.5 JEUX**\n\n• **Relanceurs :** Moyenne sous 21 jeux.")
         else:
-            st.info("🔵 **PAS DE BET RECOMMANDÉ (MARCHÉ NEUTRE)**\n\n• Les statistiques ne montrent aucun edge évident sur le cut de jeux.")
+            st.info("🔵 **PAS DE BET (MARCHÉ NEUTRE)**")
 
     # 2. OVER / UNDER ACES
     with st.container(border=True):
-        st.markdown(f"#### 💥 Over / Under Aces (Spécifique {surface})")
+        st.markdown(f"#### 💥 Over / Under Aces ({surface})")
         
         a1, a2, a3 = st.columns(3)
-        a1.metric(f"Aces {player_a}", f"{stats_a['avg_aces']:.1f}")
-        a2.metric(f"Aces {player_b}", f"{stats_b['avg_aces']:.1f}")
-        a3.metric("Total Projeté", f"{total_projected_aces:.1f}")
+        a1.metric(f"Aces {player_a[:8]}", f"{stats_a['avg_aces']:.1f}")
+        a2.metric(f"Aces {player_b[:8]}", f"{stats_b['avg_aces']:.1f}")
+        a3.metric("Total", f"{total_projected_aces:.1f}")
 
-        # Détermination dynamique de la ligne de cut
         baseline_aces = 14.5 if surface == "Grass" else (11.5 if surface == "Hard" else 7.5)
         
         if total_projected_aces >= (baseline_aces + 2.0):
-            st.success(f"🟢 **RECOMMANDATION : OVER {baseline_aces:.1f} ACES**\n\n"
-                       f"• **Analyse :** Gros serveurs réguliers sur **{surface}**. "
-                       f"Projection solide de `{total_projected_aces:.1f}` aces au total.")
+            st.success(f"🟢 **RECOMMANDATION : OVER {baseline_aces:.1f} ACES**")
         elif total_projected_aces <= (baseline_aces - 2.0) or surface == "Clay":
-            st.error(f"🔴 **RECOMMANDATION : UNDER {baseline_aces:.1f} ACES**\n\n"
-                     f"• **Analyse :** Qualité de relance ou surface lente ({surface}) freinant le nombre d'aces. "
-                     f"Projection à seulement `{total_projected_aces:.1f}` aces.")
+            st.error(f"🔴 **RECOMMANDATION : UNDER {baseline_aces:.1f} ACES**")
         else:
-            st.info(f"🔵 **MARCHÉ ÉQUILIBRÉ SUR LES ACES** (Cut estimé : {round(total_projected_aces) - 0.5:.1f} Aces)")
+            st.info(f"🔵 **MARCHÉ ÉQUILIBRÉ** ({round(total_projected_aces) - 0.5:.1f} Aces)")
 
 with m2_col:
     # 3. OVER / UNDER DOUBLES FAUTES
     with st.container(border=True):
-        st.markdown(f"#### ⚠️ Over / Under Doubles Fautes (Sur {surface})")
+        st.markdown(f"#### ⚠️ Doubles Fautes ({surface})")
         
         df1, df2, df3 = st.columns(3)
-        df1.metric(f"DF {player_a}", f"{stats_a['avg_dfs']:.1f}")
-        df2.metric(f"DF {player_b}", f"{stats_b['avg_dfs']:.1f}")
-        df3.metric("Total Projeté", f"{total_projected_dfs:.1f}")
+        df1.metric(f"DF {player_a[:8]}", f"{stats_a['avg_dfs']:.1f}")
+        df2.metric(f"DF {player_b[:8]}", f"{stats_b['avg_dfs']:.1f}")
+        df3.metric("Total", f"{total_projected_dfs:.1f}")
 
         if total_projected_dfs >= 6.5:
-            st.warning(f"⚡ **PRÉVISION : OVER 6.5 DOUBLES FAUTES**\n\n"
-                       f"• **Analyse :** Prise de risque excessive ou fébrilité sur 2nde balle ({total_projected_dfs:.1f} DF/m en moyenne).")
+            st.warning("⚡ **OVER 6.5 DOUBLES FAUTES**")
         elif total_projected_dfs <= 4.0:
-            st.success(f"🟢 **PRÉVISION : UNDER 5.5 DOUBLES FAUTES**\n\n"
-                       f"• **Analyse :** Deux joueurs très réguliers au service sur {surface} avec peu de déchet sur 2nde balle.")
+            st.success("🟢 **UNDER 5.5 DOUBLES FAUTES**")
         else:
-            st.info("🔵 **MARCHÉ NEUTRE SUR LES DOUBLES FAUTES**")
+            st.info("🔵 **MARCHÉ NEUTRE DF**")
 
     # 4. HANDICAP SETS
     with st.container(border=True):
-        st.markdown(f"#### 🛡️ Handicap Sets (+1.5 / -1.5 Sets)")
+        st.markdown("#### 🛡️ Handicap Sets")
         
         out_stats = stats_b if prob_a > prob_b else stats_a
 
-        st.write(f"• **Favori Modèle :** `{fav_player_name}` ({prob_fav*100:.1f}% de chances)")
+        st.write(f"• **Favori :** `{fav_player_name}` ({prob_fav*100:.0f}%)")
         
         if is_heavy_blowout:
-            st.success(f"🚀 **SAFE : {fav_player_name} à -1.5 Sets (Victoire 2-0 / 3-0)**\n\n"
-                       f"• **Analyse :** Ecart de niveau prononcé sur {surface}. Le favori ne devrait pas concéder de set.")
+            st.success(f"🚀 **SAFE : {fav_player_name} à -1.5 Sets (2-0)**")
         elif combined_3set_pct >= 35 or (0.50 <= prob_fav <= 0.65):
-            st.success(f"🛡️ **SAFE : {underdog_player_name} à +1.5 Sets**\n\n"
-                       f"• **Analyse :** Match serré. **{underdog_player_name}** accroche un set dans {out_stats['pct_3_sets']:.0f}% de ses matchs récents.")
+            st.success(f"🛡️ **SAFE : {underdog_player_name} à +1.5 Sets**")
         else:
-            st.info(f"🔵 **Victoire sèche recommandée** sur {fav_player_name}")
+            st.info(f"🔵 **Victoire sèche** sur {fav_player_name}")
