@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# STYLES CSS PERSONNALISÉS (MOBILE FIRST & FULL-WIDTH IMAGES)
+# STYLES CSS PERSONNALISÉS (MOBILE FIRST & IMAGES PLEINE LARGEUR)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -140,22 +140,25 @@ st.markdown("""
         margin-bottom: 10px;
     }
 
-    /* IMAGES PLEINE LARGEUR */
-    [data-testid="stImage"] {
+    /* FIX SUPRÊME POUR IMAGES PLEINE LARGEUR COMMES LES BLOCS DE STATS */
+    div[data-element-type="stImage"],
+    [data-testid="stImage"],
+    [data-testid="stImage"] > div,
+    [data-testid="stImage"] img {
         width: 100% !important;
-        margin-top: 10px !important;
-        margin-bottom: 18px !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        display: block !important;
     }
-    [data-testid="stImage"] > div {
-        width: 100% !important;
-    }
+
     [data-testid="stImage"] img {
         border-radius: 10px;
         height: 180px !important;
-        width: 100% !important;
-        max-width: 100% !important;
         object-fit: cover !important;
-        display: block !important;
+        margin-top: 8px !important;
+        margin-bottom: 16px !important;
     }
 </style>
 """, unsafe_allow_html=True)
