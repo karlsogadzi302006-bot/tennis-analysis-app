@@ -371,7 +371,7 @@ cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
 # ---------------------------------------------------------
 # 6. CATEGORIE 1 : MATCHUP & PERFORMANCE (ROSE / TITANIUM)
 # ---------------------------------------------------------
-st.markdown("<div class='cat-title-matchup'>📊 Matchup & Performance Surface</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='cat-title-matchup'>📊 Matchup & Performance sur {surface}</div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
@@ -388,7 +388,7 @@ with col1:
     st.markdown("<div class='card-matchup'>", unsafe_allow_html=True)
     g1, g2 = st.columns(2)
     g1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
-    g2.metric(f"Vs {surface}", f"{stats_a['surface_winrate']*100:.0f}%")
+    g2.metric("Vs Base", f"{stats_a['surface_winrate']*100:.0f}%")
     g1.metric("Forme", f"{stats_a['last_10_wins']}/10")
     g2.metric("Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
     st.markdown("</div>", unsafe_allow_html=True)
@@ -406,16 +406,17 @@ with col2:
     st.markdown("<div class='card-matchup'>", unsafe_allow_html=True)
     g1, g2 = st.columns(2)
     g1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
-    g2.metric(f"Vs {surface}", f"{stats_b['surface_winrate']*100:.0f}%")
+    g2.metric("Vs Base", f"{stats_b['surface_winrate']*100:.0f}%")
     g1.metric("Forme", f"{stats_b['last_10_wins']}/10")
     g2.metric("Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
     st.markdown("</div>", unsafe_allow_html=True)
 
 fav_surface = player_a if stats_a['surface_winrate'] >= stats_b['surface_winrate'] else player_b
 fav_style = player_a if winrate_a_vs_b_style >= winrate_b_vs_a_style else player_b
+
 st.markdown(f"""
 <div class='analysis-box'>
-    💡 <b>Surface & Matchup :</b> Avantage <b>{fav_surface}</b> sur {surface} ({max(stats_a['surface_winrate'], stats_b['surface_winrate'])*100:.0f}% V). Meilleur bilan vs le style adverse : <b>{fav_style}</b> ({max(winrate_a_vs_b_style, winrate_b_vs_a_style)*100:.0f}% V).
+    💡 <b>Analyse Matchup ({surface}) :</b> Avantage <b>{fav_surface}</b> sur la base de la surface ({max(stats_a['surface_winrate'], stats_b['surface_winrate'])*100:.0f}% V). Profil tactique favorisé : <b>{fav_style}</b> vs le style adverse ({max(winrate_a_vs_b_style, winrate_b_vs_a_style)*100:.0f}% V).
 </div>
 """, unsafe_allow_html=True)
 
