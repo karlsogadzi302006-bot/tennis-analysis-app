@@ -1,3 +1,20 @@
+import os
+import re
+import datetime
+from pathlib import Path
+import streamlit as st
+import pandas as pd
+import numpy as np
+
+# 1. Configuration obligatoire TOUT EN HAUT
+st.set_page_config(
+    page_title="Tennis ValueBet AI — Analytics ATP",
+    page_icon="🎾",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# 2. Styles CSS (Maintenant 'st' est bien défini)
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
