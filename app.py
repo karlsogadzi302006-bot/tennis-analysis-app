@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# STYLES CSS PERSONNALISÉS (OPTIMISÉS MOBILE FIRST & AÉRÉS)
+# STYLES CSS PERSONNALISÉS (MOBILE FIRST & HARMONISÉ)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -44,12 +44,13 @@ st.markdown("""
         margin-bottom: 16px;
     }
 
-    /* Force les colonnes côte à côte sur mobile sans chevauchement */
+    /* Force les colonnes côte à côte sur mobile sans décalage */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        gap: 8px !important;
+        gap: 6px !important;
+        align-items: stretch !important;
     }
     
     [data-testid="stColumn"] {
@@ -57,17 +58,26 @@ st.markdown("""
         flex: 1 1 0% !important;
     }
 
-    /* Métriques Streamlit ajustées */
+    /* Métriques Streamlit ajustées & alignées */
+    [data-testid="stMetric"] {
+        background: rgba(19, 23, 34, 0.6);
+        border: 1px solid #1e293b;
+        border-radius: 6px;
+        padding: 4px 6px !important;
+        text-align: center;
+    }
     [data-testid="stMetricValue"] {
-        font-size: 0.98rem !important;
+        font-size: 0.95rem !important;
         font-weight: 700 !important;
+        line-height: 1.2 !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 0.70rem !important;
+        font-size: 0.65rem !important;
         color: #94a3b8 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+        justify-content: center !important;
     }
 
     /* Cartes Joueurs */
@@ -130,17 +140,22 @@ st.markdown("""
         margin-bottom: 10px;
     }
 
-    /* Redimensionnement des images pour un rendu propre et plus haut sur téléphone */
+    /* FORCER LES IMAGES SUR TOUTE LA LARGEUR DE L'ÉCRAN */
     [data-testid="stImage"] {
+        width: 100% !important;
         margin-top: 10px !important;
         margin-bottom: 18px !important;
     }
+    [data-testid="stImage"] > div {
+        width: 100% !important;
+    }
     [data-testid="stImage"] img {
         border-radius: 10px;
-        height: 200px !important;
-        max-height: 200px !important;
+        height: 180px !important;
         width: 100% !important;
+        max-width: 100% !important;
         object-fit: cover !important;
+        display: block !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -472,7 +487,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# BANNIÈRE 1 (CORRIGÉE & HAUTE)
+# BANNIÈRE 1 (NOCTURNE TENNIS - PLEINE LARGEUR)
 st.image("https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
@@ -502,8 +517,8 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# BANNIÈRE 2 (NOUVELLE IMAGE REMPLAÇANT L'IMAGE CASSÉE)
-st.image("https://images.unsplash.com/photo-1542144612-1b3641ec3459?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
+# BANNIÈRE 2 (IMAGE TENNIS REMPLAÇANT LA MONTAGNE - PLEINE LARGEUR)
+st.image("https://images.unsplash.com/photo-1560012057-4372e14c5085?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
 # 8. CONFRONTATIONS DIRECTES (H2H)
@@ -527,7 +542,7 @@ if total_h2h > 0:
 else:
     st.write("Aucune confrontation directe enregistrée.")
 
-# BANNIÈRE 3 (HAUTE & CORRIGÉE)
+# BANNIÈRE 3 (ACTION TENNIS - PLEINE LARGEUR)
 st.image("https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
@@ -581,7 +596,7 @@ with r2:
     else:
         st.error("🔴 **Cote trop basse**")
 
-# BANNIÈRE 4
+# BANNIÈRE 4 (BALLES DE TENNIS - PLEINE LARGEUR)
 st.image("https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
