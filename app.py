@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# STYLES CSS PERSONNALISÉS (MOBILE FIRST / COMPACT CÔTE À CÔTE)
+# STYLES CSS PERSONNALISÉS (OPTIMISÉS MOBILE FIRST & AÉRÉS)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -31,7 +31,7 @@ st.markdown("""
     
     /* Titres */
     .main-title {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
         font-weight: 800;
         background: linear-gradient(90deg, #38bdf8, #818cf8);
         -webkit-background-clip: text;
@@ -40,16 +40,16 @@ st.markdown("""
     }
     .sub-title {
         color: #64748b;
-        font-size: 0.78rem;
-        margin-bottom: 12px;
+        font-size: 0.8rem;
+        margin-bottom: 16px;
     }
 
-    /* FORCE LES COLONNES CÔTE À CÔTE SUR MOBILE */
+    /* Force les colonnes côte à côte sur mobile sans chevauchement */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        gap: 6px !important;
+        gap: 8px !important;
     }
     
     [data-testid="stColumn"] {
@@ -57,13 +57,13 @@ st.markdown("""
         flex: 1 1 0% !important;
     }
 
-    /* Métriques Streamlit */
+    /* Métriques Streamlit ajustées */
     [data-testid="stMetricValue"] {
-        font-size: 0.95rem !important;
+        font-size: 0.98rem !important;
         font-weight: 700 !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 0.68rem !important;
+        font-size: 0.70rem !important;
         color: #94a3b8 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
@@ -74,9 +74,9 @@ st.markdown("""
     .player-card {
         background: #131722;
         border: 1px solid #1e293b;
-        border-radius: 8px;
-        padding: 6px 8px;
-        margin-bottom: 6px;
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
     }
     
     .player-header {
@@ -85,7 +85,7 @@ st.markdown("""
         align-items: center;
     }
     .player-name {
-        font-size: 0.95rem;
+        font-size: 0.98rem;
         font-weight: 700;
         color: #f8fafc;
         white-space: nowrap;
@@ -97,9 +97,9 @@ st.markdown("""
         background: rgba(56, 189, 248, 0.1);
         color: #38bdf8;
         border: 1px solid rgba(56, 189, 248, 0.25);
-        padding: 1px 5px;
+        padding: 2px 6px;
         border-radius: 8px;
-        font-size: 0.62rem;
+        font-size: 0.65rem;
         font-weight: 600;
         text-transform: uppercase;
     }
@@ -108,10 +108,10 @@ st.markdown("""
         background: rgba(30, 41, 59, 0.5);
         border-left: 3px solid #38bdf8;
         border-radius: 6px;
-        padding: 8px 10px;
-        margin-top: 6px;
-        margin-bottom: 10px;
-        font-size: 0.8rem;
+        padding: 10px 12px;
+        margin-top: 8px;
+        margin-bottom: 16px;
+        font-size: 0.82rem;
         color: #cbd5e1;
     }
 
@@ -119,22 +119,28 @@ st.markdown("""
         background: rgba(34, 197, 94, 0.05);
         border: 1px solid rgba(34, 197, 94, 0.3);
         border-radius: 8px;
-        padding: 8px 10px;
-        margin-bottom: 8px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
     }
     .ev-card-danger {
         background: rgba(239, 68, 68, 0.05);
         border: 1px solid rgba(239, 68, 68, 0.25);
         border-radius: 8px;
-        padding: 8px 10px;
-        margin-bottom: 8px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
     }
 
+    /* Redimensionnement des images pour un rendu propre et plus haut sur téléphone */
+    [data-testid="stImage"] {
+        margin-top: 10px !important;
+        margin-bottom: 18px !important;
+    }
     [data-testid="stImage"] img {
-        border-radius: 8px;
-        max-height: 120px;
-        width: 100%;
-        object-fit: cover;
+        border-radius: 10px;
+        height: 200px !important;
+        max-height: 200px !important;
+        width: 100% !important;
+        object-fit: cover !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -245,7 +251,7 @@ if df_circuit.empty:
 # ---------------------------------------------------------
 # 3. SELECTION DES JOUEURS
 # ---------------------------------------------------------
-st.sidebar.markdown("### ⚙️️ Configuration du Match")
+st.sidebar.markdown("### ⚙️ Configuration du Match")
 
 all_players = sorted(list(set(df_circuit['winner_name'].unique()).union(set(df_circuit['loser_name'].unique()))))
 
@@ -309,7 +315,6 @@ def get_detailed_metrics(player, surface_match):
     if total_m == 0:
         return None
 
-    # Calcul de la qualité moyenne des victoires/tournois
     w_levels = p_wins['tourney_level'].map(LEVEL_WEIGHTS).fillna(1.0) if len(p_wins) > 0 else pd.Series([1.0])
     l_levels = p_losses['tourney_level'].map(LEVEL_WEIGHTS).fillna(1.0) if len(p_losses) > 0 else pd.Series([1.0])
     
@@ -335,7 +340,7 @@ def get_detailed_metrics(player, surface_match):
     l_surf = target_matches[target_matches['is_win'] == 0]
     
     aces = pd.concat([w_surf['w_ace'], l_surf['l_ace']]).dropna()
-    dfs_count = pd.concat([w_surf['w_df'], l_surf['l_surf' if 'l_surf' in l_surf else 'l_df']]).dropna() if 'l_df' in l_surf else pd.Series([0])
+    dfs_count = pd.concat([w_surf['w_df'], l_surf['l_df'] if 'l_df' in l_surf else pd.Series([0])]).dropna()
     
     svpt = pd.concat([w_surf['w_svpt'], l_surf['l_svpt']]).sum()
     fst_in = pd.concat([w_surf['w_1stin'], l_surf['l_1stin']]).sum()
@@ -383,7 +388,7 @@ if not stats_a or not stats_b:
     st.stop()
 
 # ---------------------------------------------------------
-# 5. MODÈLE LOGISTIQUE ELO / BRADLEY-TERRY RÉALISTE
+# 5. MODÈLE LOGISTIQUE ELO / BRADLEY-TERRY
 # ---------------------------------------------------------
 def get_weighted_winrate_vs_style(stats_player, target_style):
     weighted_wins, weighted_total = 0.0, 0.0
@@ -409,7 +414,6 @@ h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
 h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
 total_h2h = len(h2h_matches)
 
-# Calcul du Score Elo / Force Globale réajusté avec la Qualité des tournois
 rating_a = (stats_a['surface_winrate'] * 400) + (winrate_a_vs_b_style * 300) + (stats_a['recent_form'] * 300) + (stats_a['quality_score'] * 500)
 rating_b = (stats_b['surface_winrate'] * 400) + (winrate_b_vs_a_style * 300) + (stats_b['recent_form'] * 300) + (stats_b['quality_score'] * 500)
 
@@ -417,9 +421,8 @@ if total_h2h > 0:
     rating_a += (h2h_a_wins - h2h_b_wins) * 60
     rating_b += (h2h_b_wins - h2h_a_wins) * 60
 
-# Formule logistique
 prob_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 400.0))
-prob_a = min(max(prob_a, 0.03), 0.97) # Cap borné à 3%-97%
+prob_a = min(max(prob_a, 0.03), 0.97)
 prob_b = 1.0 - prob_a
 
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
@@ -469,7 +472,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# BANNIÈRE 1
+# BANNIÈRE 1 (CORRIGÉE & HAUTE)
 st.image("https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
@@ -499,8 +502,8 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# BANNIÈRE 2
-st.image("https://images.unsplash.com/photo-1530915534664-4ac6423ca938?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
+# BANNIÈRE 2 (NOUVELLE IMAGE REMPLAÇANT L'IMAGE CASSÉE)
+st.image("https://images.unsplash.com/photo-1542144612-1b3641ec3459?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
 # 8. CONFRONTATIONS DIRECTES (H2H)
@@ -524,7 +527,7 @@ if total_h2h > 0:
 else:
     st.write("Aucune confrontation directe enregistrée.")
 
-# BANNIÈRE 3
+# BANNIÈRE 3 (HAUTE & CORRIGÉE)
 st.image("https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
@@ -533,8 +536,8 @@ st.image("https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?q=80&w=12
 st.subheader("🎯 ValueBet 1N2 (+EV)")
 
 c1, c2 = st.columns(2)
-cote_a = c1.number_input(f"Cote {player_a}", value=1.25 if prob_a > 0.70 else 1.90, step=0.05)
-cote_b = c2.number_input(f"Cote {player_b}", value=1.25 if prob_b > 0.70 else 3.50, step=0.05)
+cote_a = c1.number_input(f"Cote {player_a}", value=float(round(cote_equitable_a, 2)), step=0.05)
+cote_b = c2.number_input(f"Cote {player_b}", value=float(round(cote_equitable_b, 2)), step=0.05)
 
 ev_a = (prob_a * cote_a) - 1
 ev_b = (prob_b * cote_b) - 1
