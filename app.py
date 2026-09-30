@@ -421,14 +421,33 @@ if not stats_a or not stats_b:
     st.stop()
 
 # ---------------------------------------------------------
-# 7. CALCUL RECALIBRÉ SELON LES PONDÉRATIONS EXACTES
+# 7. CALCUL SELON LES PONDÉRATIONS (35% / 25% / 25% / 15%)
 # ---------------------------------------------------------
 
-# --- ÉTAPE 1 : SURFACE & CONDITIONS (35% / Coeff 3.5) ---
+# 1. DÉFINITION OBLIGATOIRE DE LA FONCTION AVANT APPEL
+def get_weighted_winrate_vs_style(stats_player, target_style):
+    weighted_wins, weighted_total = 0.0, 0.0
+    
+    if 'loser_name' in stats_player['p_wins'].columns:
+        for opp in stats_player['p_wins']['loser_name']:
+            opp_style = player_styles_map.get(opp, "Polyvalent")
+            sim_score = STYLE_SIMILARITY.get(target_style, {}).get(opp_style, 0.3)
+            weighted_wins += 1.0 * sim_score
+            weighted_total += 1.0 * sim_score
+
+    if 'winner_name' in stats_player['p_losses'].columns:
+        for opp in stats_player['p_losses']['winner_name']:
+            opp_style = player_styles_map.get(opp, "Polyvalent")
+            sim_score = STYLE_SIMILARITY.get(target_style, {}).get(opp_style, 0.3)
+            weighted_total += 1.0 * sim_score
+
+    return (weighted_wins / weighted_total) if weighted_total >= 1.0 else stats_player['overall_winrate']
+
+
+# 2. ÉTAPE 1 : SURFACE & CONDITIONS (35% / Coeff 3.5)
 serve_adj_a = (stats_a['pct_1st_won'] / 100.0) * stats_a['serve_weight']
 serve_adj_b = (stats_b['pct_1st_won'] / 100.0) * stats_b['serve_weight']
 
-# Score sur 100
 score_p1_a = (stats_a['surface_winrate'] * 80.0) + (serve_adj_a * 20.0)
 score_p1_b = (stats_b['surface_winrate'] * 80.0) + (serve_adj_b * 20.0)
 
@@ -436,8 +455,7 @@ p1_surface_a = score_p1_a * 3.5
 p1_surface_b = score_p1_b * 3.5
 
 
-# --- ÉTAPE 2 : FORME RÉCENTE & PHYSIQUE (25% / Coeff 2.5) ---
-# Score sur 100 basé sur les 10-15 derniers matchs
+# 3. ÉTAPE 2 : FORME RÉCENTE & PHYSIQUE (25% / Coeff 2.5)
 score_p2_a = stats_a['recent_form'] * 100.0
 score_p2_b = stats_b['recent_form'] * 100.0
 
@@ -445,11 +463,10 @@ p2_forme_a = score_p2_a * 2.5
 p2_forme_b = score_p2_b * 2.5
 
 
-# --- ÉTAPE 3 : MATCH-UP TACTIQUE (25% / Coeff 2.5) ---
+# 4. ÉTAPE 3 : MATCH-UP TACTIQUE (25% / Coeff 2.5)
 winrate_a_vs_b_style = get_weighted_winrate_vs_style(stats_a, stats_b['style'])
 winrate_b_vs_a_style = get_weighted_winrate_vs_style(stats_b, stats_a['style'])
 
-# Score sur 100 basé sur le winrate vs style adverse
 score_p3_a = winrate_a_vs_b_style * 100.0
 score_p3_b = winrate_b_vs_a_style * 100.0
 
@@ -457,7 +474,7 @@ p3_matchup_a = score_p3_a * 2.5
 p3_matchup_b = score_p3_b * 2.5
 
 
-# --- ÉTAPE 4 : H2H & FACTEUR MENTAL (15% / Coeff 1.5) ---
+# 5. ÉTAPE 4 : H2H & FACTEUR MENTAL (15% / Coeff 1.5)
 clean_a, clean_b = clean_name(player_a), clean_name(player_b)
 h2h_matches = df_circuit[
     ((df_circuit['winner_clean'] == clean_a) & (df_circuit['loser_clean'] == clean_b)) |
@@ -477,7 +494,6 @@ else:
     h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
     total_h2h = len(h2h_matches)
 
-# Conversion du bilan H2H en score de domination mentale sur 100 (50 = égalité ou pas de match)
 if total_h2h > 0:
     h2h_rate_a = h2h_a_wins / total_h2h
     score_p4_a = h2h_rate_a * 100.0
@@ -490,16 +506,15 @@ p4_mental_a = score_p4_a * 1.5
 p4_mental_b = score_p4_b * 1.5
 
 
-# --- SYNTHÈSE DES RATINGS COMPOSITES (TOTAL SUR 1000 POINTS) ---
+# 6. SYNTHÈSE DES RATINGS COMPOSITES
 rating_a = p1_surface_a + p2_forme_a + p3_matchup_a + p4_mental_a
 rating_b = p1_surface_b + p2_forme_b + p3_matchup_b + p4_mental_b
 
 
-# --- ÉTAPE 5 : CALCUL DE VALUE (PROBABILITÉS LOGISTIQUES) ---
+# 7. ÉTAPE 5 : CALCUL DE VALUE (PROBABILITÉS LOGISTIQUES)
 delta_rating = rating_a - rating_b
 prob_a = 1.0 / (1.0 + 10.0 ** (-delta_rating / 350.0))
 
-# Marge de sécurité (5% min à 95% max)
 prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
