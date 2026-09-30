@@ -1,38 +1,19 @@
-import os
-import re
-import datetime
-from pathlib import Path
-import streamlit as st
-import pandas as pd
-import numpy as np
-
-# Configuration de la page Streamlit
-st.set_page_config(
-    page_title="Tennis ValueBet AI — Analytics ATP",
-    page_icon="🎾",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
-
-# ---------------------------------------------------------
-# STYLES CSS PERSONNALISÉS (MOBILE FIRST & IMAGES PLEINE LARGEUR)
-# ---------------------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
     .stApp {
-        background: #090b10;
-        color: #e2e8f0;
+        background: #0b0f19;
+        color: #f1f5f9;
     }
     
-    /* Titres */
+    /* En-tête principal */
     .main-title {
-        font-size: 1.5rem;
-        font-weight: 800;
+        font-size: 1.6rem !important;
+        font-weight: 800 !important;
         background: linear-gradient(90deg, #38bdf8, #818cf8);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -40,125 +21,101 @@ st.markdown("""
     }
     .sub-title {
         color: #64748b;
-        font-size: 0.8rem;
+        font-size: 0.85rem !important;
         margin-bottom: 16px;
     }
 
-    /* Force les colonnes côte à côte sur mobile sans décalage */
-    [data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 6px !important;
-        align-items: stretch !important;
-    }
-    
-    [data-testid="stColumn"] {
-        min-width: 0 !important;
-        flex: 1 1 0% !important;
-    }
-
-    /* Métriques Streamlit ajustées & alignées */
-    [data-testid="stMetric"] {
-        background: rgba(19, 23, 34, 0.6);
-        border: 1px solid #1e293b;
-        border-radius: 6px;
-        padding: 4px 6px !important;
-        text-align: center;
-    }
-    [data-testid="stMetricValue"] {
-        font-size: 0.95rem !important;
+    /* Titres de sections plus grands et lisibles */
+    h2, h3, .stHeader {
+        font-size: 1.3rem !important;
         font-weight: 700 !important;
-        line-height: 1.2 !important;
-    }
-    [data-testid="stMetricLabel"] {
-        font-size: 0.65rem !important;
-        color: #94a3b8 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        justify-content: center !important;
+        color: #f8fafc !important;
+        margin-top: 18px !important;
+        margin-bottom: 10px !important;
     }
 
     /* Cartes Joueurs */
     .player-card {
-        background: #131722;
+        background: #131a2b;
         border: 1px solid #1e293b;
-        border-radius: 10px;
-        padding: 8px 10px;
-        margin-bottom: 8px;
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
     }
-    
     .player-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
     .player-name {
-        font-size: 0.98rem;
-        font-weight: 700;
-        color: #f8fafc;
+        font-size: 1.1rem !important;
+        font-weight: 800 !important;
+        color: #ffffff;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    
     .style-badge {
-        background: rgba(56, 189, 248, 0.1);
+        background: rgba(56, 189, 248, 0.15);
         color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.25);
-        padding: 2px 6px;
-        border-radius: 8px;
-        font-size: 0.65rem;
-        font-weight: 600;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem !important;
+        font-weight: 700;
         text-transform: uppercase;
     }
 
-    .analysis-box {
-        background: rgba(30, 41, 59, 0.5);
-        border-left: 3px solid #38bdf8;
-        border-radius: 6px;
-        padding: 10px 12px;
-        margin-top: 8px;
-        margin-bottom: 16px;
-        font-size: 0.82rem;
-        color: #cbd5e1;
+    /* Métriques ajustées (fini les "..." tronqués) */
+    [data-testid="stMetric"] {
+        background: #182238 !important;
+        border: 1px solid #26334d !important;
+        border-radius: 8px !important;
+        padding: 8px 6px !important;
+        text-align: center !important;
+        margin-bottom: 6px !important;
+    }
+    [data-testid="stMetricValue"] {
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+        color: #38bdf8 !important;
+        line-height: 1.2 !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        color: #94a3b8 !important;
+        white-space: normal !important; /* Autorise le passage à la ligne au lieu de tronquer */
+        word-break: break-word !important;
     }
 
-    .ev-card-success {
-        background: rgba(34, 197, 94, 0.05);
-        border: 1px solid rgba(34, 197, 94, 0.3);
+    /* Boîtes d'analyse */
+    .analysis-box {
+        background: rgba(30, 41, 59, 0.6);
+        border-left: 4px solid #38bdf8;
         border-radius: 8px;
-        padding: 10px 12px;
+        padding: 12px;
+        margin-top: 8px;
+        margin-bottom: 16px;
+        font-size: 0.88rem !important;
+        line-height: 1.4 !important;
+        color: #e2e8f0;
+    }
+
+    /* Cartes ValueBet */
+    .ev-card-success {
+        background: rgba(34, 197, 94, 0.08);
+        border: 1px solid rgba(34, 197, 94, 0.4);
+        border-radius: 10px;
+        padding: 12px;
         margin-bottom: 10px;
     }
     .ev-card-danger {
-        background: rgba(239, 68, 68, 0.05);
-        border: 1px solid rgba(239, 68, 68, 0.25);
-        border-radius: 8px;
-        padding: 10px 12px;
-        margin-bottom: 10px;
-    }
-
-    /* FIX SUPRÊME POUR IMAGES PLEINE LARGEUR COMMES LES BLOCS DE STATS */
-    div[data-element-type="stImage"],
-    [data-testid="stImage"],
-    [data-testid="stImage"] > div,
-    [data-testid="stImage"] img {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 100% !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        display: block !important;
-    }
-
-    [data-testid="stImage"] img {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.3);
         border-radius: 10px;
-        height: 180px !important;
-        object-fit: cover !important;
-        margin-top: 8px !important;
-        margin-bottom: 16px !important;
+        padding: 12px;
+        margin-bottom: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -462,7 +419,7 @@ prob_b = 1.0 - prob_a
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
 
 # ---------------------------------------------------------
-# 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL
+# 6. AFFICHAGE : CARTES COMPARATIVES & MATCHUP
 # ---------------------------------------------------------
 col1, col2 = st.columns(2)
 
@@ -476,11 +433,12 @@ with col1:
     </div>
     """, unsafe_allow_html=True)
     
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
-    m2.metric(f"Vs {surface}", f"{stats_a['surface_winrate']*100:.0f}%")
-    m3.metric("Forme", f"{stats_a['last_10_wins']}/10")
-    m4.metric("Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
+    # Grille 2x2 pour des cases carrées et bien lisibles sur mobile
+    g1, g2 = st.columns(2)
+    g1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
+    g2.metric(f"Vs {surface}", f"{stats_a['surface_winrate']*100:.0f}%")
+    g1.metric("Forme", f"{stats_a['last_10_wins']}/10")
+    g2.metric("Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
 
 with col2:
     st.markdown(f"""
@@ -492,11 +450,12 @@ with col2:
     </div>
     """, unsafe_allow_html=True)
     
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
-    m2.metric(f"Vs {surface}", f"{stats_b['surface_winrate']*100:.0f}%")
-    m3.metric("Forme", f"{stats_b['last_10_wins']}/10")
-    m4.metric("Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
+    # Grille 2x2
+    g1, g2 = st.columns(2)
+    g1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
+    g2.metric(f"Vs {surface}", f"{stats_b['surface_winrate']*100:.0f}%")
+    g1.metric("Forme", f"{stats_b['last_10_wins']}/10")
+    g2.metric("Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
 
 fav_surface = player_a if stats_a['surface_winrate'] >= stats_b['surface_winrate'] else player_b
 fav_style = player_a if winrate_a_vs_b_style >= winrate_b_vs_a_style else player_b
@@ -507,24 +466,27 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 7. METRIQUES COMPACTES STYLE DE JEU
+# 7. SERVICE & ENGAGEMENT (STRUCTURÉ PAR JOUEUR)
 # ---------------------------------------------------------
 st.subheader("📊 Service & Engagement")
 
 s1, s2 = st.columns(2)
+
 with s1:
-    p1, p2, p3, p4 = st.columns(4)
-    p1.metric("Aces/m", f"{stats_a['avg_aces']:.1f}")
-    p2.metric("DF/m", f"{stats_a['avg_dfs']:.1f}")
-    p3.metric("1st In", f"{stats_a['pct_1st_in']:.0f}%")
-    p4.metric("Pts 1st", f"{stats_a['pct_1st_won']:.0f}%")
+    st.markdown(f"**🎾 {player_a}**")
+    p1, p2 = st.columns(2)
+    p1.metric("Aces / m", f"{stats_a['avg_aces']:.1f}")
+    p2.metric("DF / m", f"{stats_a['avg_dfs']:.1f}")
+    p1.metric("1st In", f"{stats_a['pct_1st_in']:.0f}%")
+    p2.metric("Pts 1st", f"{stats_a['pct_1st_won']:.0f}%")
 
 with s2:
-    p1, p2, p3, p4 = st.columns(4)
-    p1.metric("Aces/m", f"{stats_b['avg_aces']:.1f}")
-    p2.metric("DF/m", f"{stats_b['avg_dfs']:.1f}")
-    p3.metric("1st In", f"{stats_b['pct_1st_in']:.0f}%")
-    p4.metric("Pts 1st", f"{stats_b['pct_1st_won']:.0f}%")
+    st.markdown(f"**🎾 {player_b}**")
+    p1, p2 = st.columns(2)
+    p1.metric("Aces / m", f"{stats_b['avg_aces']:.1f}")
+    p2.metric("DF / m", f"{stats_b['avg_dfs']:.1f}")
+    p1.metric("1st In", f"{stats_b['pct_1st_in']:.0f}%")
+    p2.metric("Pts 1st", f"{stats_b['pct_1st_won']:.0f}%")
 
 fav_serve = player_a if stats_a['pct_1st_won'] >= stats_b['pct_1st_won'] else player_b
 st.markdown(f"""
