@@ -21,19 +21,14 @@ st.set_page_config(
 # ---------------------------------------------------------
 st.markdown("""
 <style>
-    /* ---------------------------------------------------------
-       1. THEME GLOBAL "LUXE DARK" & SURFACES
-       --------------------------------------------------------- */
+    /* THEME GLOBAL LUXE DARK */
     .stApp {
         background-color: #0b0f19;
         color: #f1f5f9;
     }
 
-    /* ---------------------------------------------------------
-       2. CONTENEURS JOUEURS (GLOW VIOLET NEON & GLOW VERT)
-       --------------------------------------------------------- */
-    /* Carte Joueur / Outsider / Conteneur Violet */
-    .player-card-purple, .player-card-outsider, .player-card-red {
+    /* CONTENEUR JOUEUR A (GLOW VIOLET NEON) */
+    .player-card-purple {
         border: 1.5px solid #a855f7 !important;
         background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
         box-shadow: 0 0 15px rgba(168, 85, 247, 0.3), inset 0 0 10px rgba(168, 85, 247, 0.15) !important;
@@ -42,15 +37,13 @@ st.markdown("""
         margin-bottom: 12px !important;
     }
 
-    /* Titre du joueur en violet néon */
-    .player-card-purple h3, .player-card-outsider h3, .player-card-red h3, .player-title-purple {
+    .player-card-purple h3 {
         color: #c084fc !important;
         text-shadow: 0 0 8px rgba(192, 132, 252, 0.5) !important;
         font-weight: 700 !important;
         margin: 0 !important;
     }
 
-    /* Badge de style en violet */
     .style-badge-purple {
         background-color: rgba(168, 85, 247, 0.2) !important;
         color: #e9d5ff !important;
@@ -63,8 +56,8 @@ st.markdown("""
         margin-top: 6px !important;
     }
 
-    /* Carte Favori / Conteneur Vert */
-    .player-card-green, .player-card-fav {
+    /* CONTENEUR JOUEUR B (GLOW VERT NEON) */
+    .player-card-green {
         border: 1.5px solid #10b981 !important;
         background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
         box-shadow: 0 0 15px rgba(16, 185, 129, 0.3), inset 0 0 10px rgba(16, 185, 129, 0.15) !important;
@@ -73,15 +66,13 @@ st.markdown("""
         margin-bottom: 12px !important;
     }
 
-    /* Titre du favori en vert néon */
-    .player-card-green h3, .player-card-fav h3, .player-title-green {
+    .player-card-green h3 {
         color: #34d399 !important;
         text-shadow: 0 0 8px rgba(52, 211, 153, 0.5) !important;
         font-weight: 700 !important;
         margin: 0 !important;
     }
 
-    /* Badge de style en vert */
     .style-badge-green {
         background-color: rgba(16, 185, 129, 0.2) !important;
         color: #a7f3d0 !important;
@@ -94,16 +85,13 @@ st.markdown("""
         margin-top: 6px !important;
     }
 
-    /* ---------------------------------------------------------
-       3. CARTES METRIQUES ET STATISTIQUES (SEGMENTATION MOBILE)
-       --------------------------------------------------------- */
+    /* CARTES METRIQUES */
     div[data-testid="stMetricValue"] {
         font-size: 1.35rem !important;
         font-weight: 800 !important;
         color: #f8fafc !important;
     }
 
-    /* Conteneur individuel des métriques */
     div[data-testid="metric-container"] {
         background: rgba(30, 41, 59, 0.7) !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -112,9 +100,7 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
     }
 
-    /* ---------------------------------------------------------
-       4. SECTION VALUEBET (+EV) ET CARTE DE VERDICT
-       --------------------------------------------------------- */
+    /* SECTION VALUEBET (+EV) */
     .cat-title-valuebet {
         color: #c084fc !important;
         font-size: 1.25rem !important;
@@ -122,27 +108,22 @@ st.markdown("""
         margin-top: 20px !important;
         margin-bottom: 12px !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
     }
 
-    /* Carte ValueBet - Succès (+EV) */
     .ev-card-success {
         border: 1.5px solid #10b981 !important;
         background: rgba(16, 185, 129, 0.1) !important;
         box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
         border-radius: 10px !important;
         padding: 12px !important;
-        color: #f1f5f9 !important;
     }
 
-    /* Carte ValueBet - Danger / Pas de Value (Harmonisé en violet au lieu du rouge) */
     .ev-card-danger {
         border: 1.5px solid #a855f7 !important;
         background: rgba(168, 85, 247, 0.1) !important;
         box-shadow: 0 0 12px rgba(168, 85, 247, 0.2) !important;
         border-radius: 10px !important;
         padding: 12px !important;
-        color: #f1f5f9 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -508,16 +489,20 @@ cote_equitable_b = 1.0 / prob_b
 # ---------------------------------------------------------
 # 8. AFFICHAGE DES CATEGORIES
 # ---------------------------------------------------------
+# ---------------------------------------------------------
+# 8. AFFICHAGE DES CATEGORIES
+# ---------------------------------------------------------
 st.markdown(f"<div class='cat-title-matchup'>📊 Matchup & Performance sur {surface}</div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
 with col1:
+    # --- CARTE JOUEUR A (GLOW VIOLET) ---
     st.markdown(f"""
-    <div class='player-card-a'>
+    <div class='player-card-purple'>
         <div class='player-header'>
-            <div class='player-name-a'>{player_a}</div>
-            <div class='style-badge-a'>{stats_a['style']}</div>
+            <h3>{player_a}</h3>
+            <div class='style-badge-purple'>{stats_a['style']}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -531,11 +516,12 @@ with col1:
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col2:
+    # --- CARTE JOUEUR B (GLOW VERT) ---
     st.markdown(f"""
-    <div class='player-card-b'>
+    <div class='player-card-green'>
         <div class='player-header'>
-            <div class='player-name-b'>{player_b}</div>
-            <div class='style-badge-b'>{stats_b['style']}</div>
+            <h3>{player_b}</h3>
+            <div class='style-badge-green'>{stats_b['style']}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
