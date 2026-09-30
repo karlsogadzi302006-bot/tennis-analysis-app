@@ -540,9 +540,8 @@ if total_h2h > 0:
         )
 else:
     st.write("Aucune confrontation directe enregistrée.")
-
 # ---------------------------------------------------------
-# 9. DETECTEUR +EV ET CALCULATEUR VALUEBET
+# 9. DETECTEUR +EV ET CALCULATEUR VALUEBET (AVEC SEUIL DE MARGE)
 # ---------------------------------------------------------
 st.subheader("🎯 ValueBet 1N2 (+EV)")
 
@@ -556,10 +555,17 @@ ev_b = (prob_b * cote_b) - 1
 kelly_a = max(0.0, ((cote_a * prob_a) - 1) / (cote_a - 1)) if cote_a > 1 else 0
 kelly_b = max(0.0, ((cote_b * prob_b) - 1) / (cote_b - 1)) if cote_b > 1 else 0
 
+# Seuil minimal d'EV pour valider un ValueBet (2.0%)
+EV_MIN_THRESHOLD = 0.02
+
 r1, r2 = st.columns(2)
 
 with r1:
-    css_class = "ev-card-success" if ev_a > 0 else "ev-card-danger"
+    if ev_a >= EV_MIN_THRESHOLD:
+        css_class = "ev-card-success"
+    else:
+        css_class = "ev-card-danger"
+        
     st.markdown(f"""
     <div class='{css_class}'>
         <b>{player_a}</b> | Prob : <b>{prob_a*100:.1f}%</b> | Fair : <b>{cote_equitable_a:.2f}</b>
@@ -570,13 +576,19 @@ with r1:
     v1.metric("EV", f"{ev_a*100:+.1f}%")
     v2.metric("Kelly", f"{min(kelly_a*100, 5.0):.1f}% BK")
 
-    if ev_a > 0:
-        st.success(f"🟢 **VALUE BET SUR {player_a}** (+{ev_a*100:.1f}% EV)")
+    if ev_a >= EV_MIN_THRESHOLD:
+        st.success(f"🟢 **VALUE BET CONFIRMÉ** (+{ev_a*100:.1f}% EV)")
+    elif 0.0 < ev_a < EV_MIN_THRESHOLD:
+        st.warning(f"🟡 **MARGE FAIBLE (+{ev_a*100:.1f}%) → NO BET**")
     else:
-        st.error("🔴 **Cote trop basse**")
+        st.error("🔴 **Cote trop basse / Pas de Value**")
 
 with r2:
-    css_class = "ev-card-success" if ev_b > 0 else "ev-card-danger"
+    if ev_b >= EV_MIN_THRESHOLD:
+        css_class = "ev-card-success"
+    else:
+        css_class = "ev-card-danger"
+        
     st.markdown(f"""
     <div class='{css_class}'>
         <b>{player_b}</b> | Prob : <b>{prob_b*100:.1f}%</b> | Fair : <b>{cote_equitable_b:.2f}</b>
@@ -587,10 +599,12 @@ with r2:
     v1.metric("EV", f"{ev_b*100:+.1f}%")
     v2.metric("Kelly", f"{min(kelly_b*100, 5.0):.1f}% BK")
 
-    if ev_b > 0:
-        st.success(f"🟢 **VALUE BET SUR {player_b}** (+{ev_b*100:.1f}% EV)")
+    if ev_b >= EV_MIN_THRESHOLD:
+        st.success(f"🟢 **VALUE BET CONFIRMÉ** (+{ev_b*100:.1f}% EV)")
+    elif 0.0 < ev_b < EV_MIN_THRESHOLD:
+        st.warning(f"🟡 **MARGE FAIBLE (+{ev_b*100:.1f}%) → NO BET**")
     else:
-        st.error("🔴 **Cote trop basse**")
+        st.error("🔴 **Cote trop basse / Pas de Value**")
 
 # ---------------------------------------------------------
 # 10. ANALYSE AFFINÉE DES MARCHÉS ANNEXES
@@ -611,7 +625,7 @@ prob_fav = max(prob_a, prob_b)
 fav_player_name = player_a if prob_a > prob_b else player_b
 underdog_player_name = player_b if prob_a > prob_b else player_a
 
-is_heavy_blowout = (prob_fav >= 0.75) or (abs(stats_a['quality_score'] - stats_b['quality_score']) >= 0.5)
+is_heavy_blowout = (prob_fav >= 0.78) or (abs(stats_a['quality_score'] - stats_b['quality_score']) >= 0.4)
 is_unstable_match = (stats_a['avg_dfs'] >= 4.5 or stats_b['avg_dfs'] >= 4.5) and (combined_3set_pct < 30)
 
 m1_col, m2_col = st.columns(2)
@@ -627,15 +641,15 @@ with m1_col:
         j3.metric("Tie-Break", f"{combined_tb_pct:.0f}%")
 
         if is_heavy_blowout:
-            st.error(f"🔴 **PRÉVISION UNDER 20.5 / 21.5 JEUX**\n\n• **Blowout :** **{fav_player_name}** ultra fav ({prob_fav*100:.0f}%). Risque de 6-3 6-2.")
+            st.error(f"🔴 **PRÉVISION UNDER 20.5 / 21.5 JEUX**\n\n• **Blowout :** **{fav_player_name}** largement favori ({prob_fav*100:.0f}%).")
         elif is_unstable_match:
-            st.warning("⚠️ **OVER RISQUÉ / INCONSTANCE**\n\n• **Breaks fréquents :** Beaucoup de DF ({total_projected_dfs:.1f}/m).")
-        elif combined_avg_games >= 23.0 or both_big_servers or combined_3set_pct >= 45:
-            st.success("🟢 **RECOMMANDATION : OVER 22.5 JEUX**\n\n• **Serré :** Fort accrochage ({combined_3set_pct:.0f}% de 3 sets).")
-        elif combined_avg_games <= 20.5 or both_returners:
-            st.warning("⚡ **RECOMMANDATION : UNDER 21.5 JEUX**\n\n• **Relanceurs :** Moyenne sous 21 jeux.")
+            st.warning("⚠️ **INCONSTANCE / RISQUE ÉLEVÉ**\n\n• **Breaks fréquents :** Nombreuses DF ({total_projected_dfs:.1f}/m).")
+        elif combined_avg_games >= 23.2 or (both_big_servers and combined_avg_games >= 22.0) or combined_3set_pct >= 48:
+            st.success("🟢 **RECOMMANDATION : OVER 22.5 JEUX**\n\n• **Match serré :** Fort accrochage pressenti.")
+        elif combined_avg_games <= 20.2 or both_returners:
+            st.warning("⚡ **RECOMMANDATION : UNDER 21.5 JEUX**\n\n• **Style relanceurs :** Échanges courts et breaks rapides.")
         else:
-            st.info("🔵 **PAS DE BET (MARCHÉ NEUTRE)**")
+            st.info("🔵 **MARGE TROP FAIBLE / NO BET** (Ligne ajustée au marché)")
 
     # 2. OVER / UNDER ACES
     with st.container(border=True):
@@ -648,12 +662,12 @@ with m1_col:
 
         baseline_aces = 14.5 if surface == "Grass" else (11.5 if surface == "Hard" else 7.5)
         
-        if total_projected_aces >= (baseline_aces + 2.0):
+        if total_projected_aces >= (baseline_aces + 2.5):
             st.success(f"🟢 **RECOMMANDATION : OVER {baseline_aces:.1f} ACES**")
-        elif total_projected_aces <= (baseline_aces - 2.0) or surface == "Clay":
+        elif total_projected_aces <= (baseline_aces - 2.5) or surface == "Clay":
             st.error(f"🔴 **RECOMMANDATION : UNDER {baseline_aces:.1f} ACES**")
         else:
-            st.info(f"🔵 **MARCHÉ ÉQUILIBRÉ** ({round(total_projected_aces) - 0.5:.1f} Aces)")
+            st.info(f"🔵 **MARGE FAIBLE / NO BET** (Projeté : {total_projected_aces:.1f} Aces)")
 
 with m2_col:
     # 3. OVER / UNDER DOUBLES FAUTES
@@ -665,24 +679,25 @@ with m2_col:
         df2.metric(f"DF {player_b[:8]}", f"{stats_b['avg_dfs']:.1f}")
         df3.metric("Total", f"{total_projected_dfs:.1f}")
 
-        if total_projected_dfs >= 6.5:
-            st.warning("⚡ **OVER 6.5 DOUBLES FAUTES**")
-        elif total_projected_dfs <= 4.0:
-            st.success("🟢 **UNDER 5.5 DOUBLES FAUTES**")
+        if total_projected_dfs >= 6.8:
+            st.warning("⚡ **RECOMMANDATION : OVER 6.5 DF**")
+        elif total_projected_dfs <= 3.8:
+            st.success("🟢 **RECOMMANDATION : UNDER 5.5 DF**")
         else:
-            st.info("🔵 **MARCHÉ NEUTRE DF**")
+            st.info("🔵 **MARGE FAIBLE / NO BET**")
 
     # 4. HANDICAP SETS
     with st.container(border=True):
         st.markdown("#### 🛡️ Handicap Sets")
         
-        out_stats = stats_b if prob_a > prob_b else stats_a
-
         st.write(f"• **Favori :** `{fav_player_name}` ({prob_fav*100:.0f}%)")
         
         if is_heavy_blowout:
-            st.success(f"🚀 **SAFE : {fav_player_name} à -1.5 Sets (2-0)**")
-        elif combined_3set_pct >= 35 or (0.50 <= prob_fav <= 0.65):
+            st.success(f"🚀 **SAFE : {fav_player_name} -1.5 Sets (2-0)**")
+        elif combined_3set_pct >= 38 or (0.52 <= prob_fav <= 0.62):
+            st.success(f"🛡️ **SAFE : {underdog_player_name} +1.5 Sets**")
+        else:
+            st.info(f"🔵 **MARGE FAIBLE / Victoire sèche** sur {fav_player_name}")
             st.success(f"🛡️ **SAFE : {underdog_player_name} à +1.5 Sets**")
         else:
             st.info(f"🔵 **Victoire sèche** sur {fav_player_name}")
