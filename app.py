@@ -23,17 +23,17 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    /* FOND SOMBRE LUXE AVEC MOTIF DISCRET (RADIAL PATTERN) */
+    /* FOND LUXE SOMBRE AVEC MOTIF DISCRET */
     .stApp {
-        background-color: #080a0f;
+        background-color: #07090e;
         background-image: 
-            radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.25) 0%, transparent 75%),
-            radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
-        background-size: 100% 100%, 24px 24px;
+            radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.3) 0%, transparent 70%),
+            radial-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 0);
+        background-size: 100% 100%, 20px 20px;
         color: #f8fafc;
     }
     
-    /* En-tête principal raffiné */
+    /* EN-TÊTE PRINCIPAL */
     .main-title {
         font-size: 1.7rem !important;
         font-weight: 800 !important;
@@ -41,7 +41,6 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 2px;
-        letter-spacing: -0.5px;
     }
     .sub-title {
         color: #64748b;
@@ -50,123 +49,99 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* Titres de sections minimalistes & élégants */
-    h2, h3, .stHeader {
-        font-size: 1.2rem !important;
-        font-weight: 700 !important;
-        color: #f1f5f9 !important;
-        margin-top: 24px !important;
-        margin-bottom: 12px !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        padding-bottom: 8px;
-        letter-spacing: -0.3px;
+    /* TITRES DE CATEGORIES PERSONNALISES PAR COULEUR */
+    .cat-title-matchup {
+        color: #fb7185 !important; /* Rose Titanium */
+        font-size: 1.25rem; font-weight: 800; margin-top: 18px; margin-bottom: 10px;
+        border-bottom: 2px solid rgba(251, 113, 133, 0.3); padding-bottom: 4px;
+    }
+    .cat-title-service {
+        color: #38bdf8 !important; /* Bleu Cyan */
+        font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
+        border-bottom: 2px solid rgba(56, 189, 248, 0.3); padding-bottom: 4px;
+    }
+    .cat-title-h2h {
+        color: #c084fc !important; /* Violet Améthyste */
+        font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
+        border-bottom: 2px solid rgba(192, 132, 252, 0.3); padding-bottom: 4px;
+    }
+    .cat-title-valuebet {
+        color: #f59e0b !important; /* Or / Ambre Néon */
+        font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
+        border-bottom: 2px solid rgba(245, 158, 11, 0.3); padding-bottom: 4px;
+    }
+    .cat-title-annexes {
+        color: #34d399 !important; /* Émeraude */
+        font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
+        border-bottom: 2px solid rgba(52, 211, 153, 0.3); padding-bottom: 4px;
     }
 
-    /* Cartes Joueurs - Finition Titanium Rose Gold & Platinum Emerald */
+    /* CARTES JOUEURS (Section Matchup) */
     .player-card-a {
-        background: linear-gradient(145deg, rgba(225, 29, 72, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid rgba(244, 63, 94, 0.35);
-        box-shadow: 0 4px 20px rgba(244, 63, 94, 0.05);
-        border-radius: 12px;
-        padding: 10px 14px;
-        margin-bottom: 10px;
+        background: linear-gradient(145deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(244, 63, 94, 0.4);
+        border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
     }
     .player-card-b {
-        background: linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid rgba(16, 185, 129, 0.35);
-        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.05);
-        border-radius: 12px;
-        padding: 10px 14px;
-        margin-bottom: 10px;
+        background: linear-gradient(145deg, rgba(52, 211, 153, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(52, 211, 153, 0.4);
+        border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
     }
-    .player-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .player-name-a {
-        font-size: 1.1rem !important;
-        font-weight: 800 !important;
-        color: #fb7185;
-    }
-    .player-name-b {
-        font-size: 1.1rem !important;
-        font-weight: 800 !important;
-        color: #34d399;
-    }
+    .player-name-a { font-size: 1.1rem !important; font-weight: 800; color: #fb7185; }
+    .player-name-b { font-size: 1.1rem !important; font-weight: 800; color: #34d399; }
+    
     .style-badge-a {
-        background: rgba(244, 63, 94, 0.12);
-        color: #fecdd3;
-        border: 1px solid rgba(244, 63, 94, 0.3);
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.7rem !important;
-        font-weight: 700;
-        letter-spacing: 0.3px;
+        background: rgba(244, 63, 94, 0.15); color: #fecdd3; border: 1px solid rgba(244, 63, 94, 0.3);
+        padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
     }
     .style-badge-b {
-        background: rgba(16, 185, 129, 0.12);
-        color: #a7f3d0;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.7rem !important;
-        font-weight: 700;
-        letter-spacing: 0.3px;
+        background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
     }
 
-    /* Métriques sombres mates avec valeurs Doré Champagne */
+    /* METRIQUES DE LA SECTION MATCHUP (ROSE / DORE) */
+    .card-matchup [data-testid="stMetric"] {
+        background: rgba(15, 23, 42, 0.8) !important;
+        border: 1px solid rgba(244, 63, 94, 0.2) !important;
+    }
+    .card-matchup [data-testid="stMetricValue"] { color: #fbbf24 !important; }
+
+    /* METRIQUES DE LA SECTION SERVICE (CYAN / AZUR) */
+    .card-service [data-testid="stMetric"] {
+        background: rgba(15, 23, 42, 0.8) !important;
+        border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    }
+    .card-service [data-testid="stMetricValue"] { color: #38bdf8 !important; }
+
+    /* STYLE COMMUN DES CASES DE STATISTIQUES */
     [data-testid="stMetric"] {
-        background: rgba(15, 23, 42, 0.75) !important;
-        border: 1px solid rgba(255, 255, 255, 0.07) !important;
         border-radius: 10px !important;
-        padding: 8px 6px !important;
-        text-align: center !important;
-        margin-bottom: 6px !important;
-        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.03);
+        padding: 8px 6px !important; text-align: center !important; margin-bottom: 6px !important;
     }
     [data-testid="stMetricValue"] {
-        font-size: 1.15rem !important;
-        font-weight: 800 !important;
-        color: #fbbf24 !important; /* Doré Champagne Premium */
-        line-height: 1.2 !important;
+        font-size: 1.15rem !important; font-weight: 800 !important; line-height: 1.2 !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 0.73rem !important;
-        font-weight: 600 !important;
-        color: #94a3b8 !important;
-        white-space: normal !important;
-        word-break: break-word !important;
+        font-size: 0.73rem !important; font-weight: 600 !important; color: #94a3b8 !important;
+        white-space: normal !important; word-break: break-word !important;
     }
 
-    /* Boîtes d'analyse au style feutré */
+    /* BOÎTES D'ANALYSE */
     .analysis-box {
         background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(251, 191, 36, 0.25);
-        border-left: 4px solid #fbbf24;
-        border-radius: 8px;
-        padding: 12px;
-        margin-top: 8px;
-        margin-bottom: 16px;
-        font-size: 0.85rem !important;
-        line-height: 1.4 !important;
-        color: #e2e8f0;
+        border: 1px solid rgba(251, 191, 36, 0.25); border-left: 4px solid #fbbf24;
+        border-radius: 8px; padding: 12px; margin-top: 8px; margin-bottom: 16px;
+        font-size: 0.85rem !important; line-height: 1.4 !important; color: #e2e8f0;
     }
 
-    /* ValueBet Cards Sobres & Efficaces */
+    /* VALUEBET CARDS */
     .ev-card-success {
-        background: rgba(16, 185, 129, 0.08);
-        border: 1px solid rgba(16, 185, 129, 0.35);
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 10px;
+        background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.4);
+        border-radius: 10px; padding: 12px; margin-bottom: 10px;
     }
     .ev-card-danger {
-        background: rgba(239, 68, 68, 0.08);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 10px;
+        background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35);
+        border-radius: 10px; padding: 12px; margin-bottom: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -468,10 +443,11 @@ prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
+# ---------------------------------------------------------
+# 6. CATEGORIE 1 : MATCHUP & PERFORMANCE (ROSE / TITANIUM)
+# ---------------------------------------------------------
+st.markdown("<div class='cat-title-matchup'>📊 Matchup & Performance Surface</div>", unsafe_allow_html=True)
 
-# ---------------------------------------------------------
-# 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL
-# ---------------------------------------------------------
 col1, col2 = st.columns(2)
 
 with col1:
@@ -484,11 +460,13 @@ with col1:
     </div>
     """, unsafe_allow_html=True)
     
+    st.markdown("<div class='card-matchup'>", unsafe_allow_html=True)
     g1, g2 = st.columns(2)
     g1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
     g2.metric(f"Vs {surface}", f"{stats_a['surface_winrate']*100:.0f}%")
     g1.metric("Forme", f"{stats_a['last_10_wins']}/10")
     g2.metric("Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with col2:
     st.markdown(f"""
@@ -500,11 +478,13 @@ with col2:
     </div>
     """, unsafe_allow_html=True)
     
+    st.markdown("<div class='card-matchup'>", unsafe_allow_html=True)
     g1, g2 = st.columns(2)
     g1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
     g2.metric(f"Vs {surface}", f"{stats_b['surface_winrate']*100:.0f}%")
     g1.metric("Forme", f"{stats_b['last_10_wins']}/10")
     g2.metric("Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 fav_surface = player_a if stats_a['surface_winrate'] >= stats_b['surface_winrate'] else player_b
 fav_style = player_a if winrate_a_vs_b_style >= winrate_b_vs_a_style else player_b
@@ -514,29 +494,32 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-
 # ---------------------------------------------------------
-# 7. SERVICE & ENGAGEMENT (STRUCTURÉ PAR JOUEUR)
+# 7. CATEGORIE 2 : SERVICE & ENGAGEMENT (BLEU CYAN)
 # ---------------------------------------------------------
-st.subheader("📊 Service & Engagement")
+st.markdown("<div class='cat-title-service'>⚡ Service & Engagement</div>", unsafe_allow_html=True)
 
 s1, s2 = st.columns(2)
 
 with s1:
-    st.markdown(f"**🎾 {player_a}**")
+    st.markdown(f"<span style='color:#fb7185; font-weight:700;'>🎾 {player_a}</span>", unsafe_allow_html=True)
+    st.markdown("<div class='card-service'>", unsafe_allow_html=True)
     p1, p2 = st.columns(2)
     p1.metric("Aces / m", f"{stats_a['avg_aces']:.1f}")
     p2.metric("DF / m", f"{stats_a['avg_dfs']:.1f}")
     p1.metric("1st In", f"{stats_a['pct_1st_in']:.0f}%")
     p2.metric("Pts 1st", f"{stats_a['pct_1st_won']:.0f}%")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with s2:
-    st.markdown(f"**🎾 {player_b}**")
+    st.markdown(f"<span style='color:#34d399; font-weight:700;'>🎾 {player_b}</span>", unsafe_allow_html=True)
+    st.markdown("<div class='card-service'>", unsafe_allow_html=True)
     p1, p2 = st.columns(2)
     p1.metric("Aces / m", f"{stats_b['avg_aces']:.1f}")
     p2.metric("DF / m", f"{stats_b['avg_dfs']:.1f}")
     p1.metric("1st In", f"{stats_b['pct_1st_in']:.0f}%")
     p2.metric("Pts 1st", f"{stats_b['pct_1st_won']:.0f}%")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 fav_serve = player_a if stats_a['pct_1st_won'] >= stats_b['pct_1st_won'] else player_b
 st.markdown(f"""
@@ -546,9 +529,9 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 8. CONFRONTATIONS DIRECTES (H2H)
+# 8. CATEGORIE 3 : FACE-À-FACE DIRECT (VIOLET)
 # ---------------------------------------------------------
-st.subheader("⚔️ Face-à-Face Direct (H2H)")
+st.markdown("<div class='cat-title-h2h'>⚔️ Face-à-Face Direct (H2H)</div>", unsafe_allow_html=True)
 if total_h2h > 0:
     st.info(f"H2H : **{player_a}** **{h2h_a_wins}** — **{h2h_b_wins}** **{player_b}** ({total_h2h} duels)")
     fav_h2h = player_a if h2h_a_wins > h2h_b_wins else (player_b if h2h_b_wins > h2h_a_wins else "Égalité")
@@ -566,10 +549,11 @@ if total_h2h > 0:
         )
 else:
     st.write("Aucune confrontation directe enregistrée.")
+
 # ---------------------------------------------------------
-# 9. DETECTEUR +EV ET CALCULATEUR VALUEBET (AVEC SEUIL DE MARGE)
+# 9. CATEGORIE 4 : VALUEBET 1N2 (DORÉ / AMBRE)
 # ---------------------------------------------------------
-st.subheader("🎯 ValueBet 1N2 (+EV)")
+st.markdown("<div class='cat-title-valuebet'>🎯 ValueBet 1N2 (+EV)</div>", unsafe_allow_html=True)
 
 c1, c2 = st.columns(2)
 cote_a = c1.number_input(f"Cote {player_a}", value=float(round(cote_equitable_a, 2)), step=0.05)
@@ -581,17 +565,12 @@ ev_b = (prob_b * cote_b) - 1
 kelly_a = max(0.0, ((cote_a * prob_a) - 1) / (cote_a - 1)) if cote_a > 1 else 0
 kelly_b = max(0.0, ((cote_b * prob_b) - 1) / (cote_b - 1)) if cote_b > 1 else 0
 
-# Seuil minimal d'EV pour valider un ValueBet (2.0%)
 EV_MIN_THRESHOLD = 0.02
 
 r1, r2 = st.columns(2)
 
 with r1:
-    if ev_a >= EV_MIN_THRESHOLD:
-        css_class = "ev-card-success"
-    else:
-        css_class = "ev-card-danger"
-        
+    css_class = "ev-card-success" if ev_a >= EV_MIN_THRESHOLD else "ev-card-danger"
     st.markdown(f"""
     <div class='{css_class}'>
         <b>{player_a}</b> | Prob : <b>{prob_a*100:.1f}%</b> | Fair : <b>{cote_equitable_a:.2f}</b>
@@ -610,11 +589,7 @@ with r1:
         st.error("🔴 **Cote trop basse / Pas de Value**")
 
 with r2:
-    if ev_b >= EV_MIN_THRESHOLD:
-        css_class = "ev-card-success"
-    else:
-        css_class = "ev-card-danger"
-        
+    css_class = "ev-card-success" if ev_b >= EV_MIN_THRESHOLD else "ev-card-danger"
     st.markdown(f"""
     <div class='{css_class}'>
         <b>{player_b}</b> | Prob : <b>{prob_b*100:.1f}%</b> | Fair : <b>{cote_equitable_b:.2f}</b>
@@ -633,9 +608,9 @@ with r2:
         st.error("🔴 **Cote trop basse / Pas de Value**")
 
 # ---------------------------------------------------------
-# 10. ANALYSE AFFINÉE DES MARCHÉS ANNEXES
+# 10. CATEGORIE 5 : MARCHÉS ANNEXES (ÉMERAUDE)
 # ---------------------------------------------------------
-st.subheader(f"🔥 Marchés Annexes sur {surface}")
+st.markdown(f"<div class='cat-title-annexes'>🔥 Marchés Annexes sur {surface}</div>", unsafe_allow_html=True)
 
 combined_avg_games = (stats_a['avg_games'] + stats_b['avg_games']) / 2
 combined_3set_pct = (stats_a['pct_3_sets'] + stats_b['pct_3_sets']) / 2
@@ -657,7 +632,6 @@ is_unstable_match = (stats_a['avg_dfs'] >= 4.5 or stats_b['avg_dfs'] >= 4.5) and
 m1_col, m2_col = st.columns(2)
 
 with m1_col:
-    # 1. OVER / UNDER JEUX
     with st.container(border=True):
         st.markdown(f"#### 🎾 Over / Under Jeux ({surface})")
         
@@ -675,9 +649,8 @@ with m1_col:
         elif combined_avg_games <= 20.2 or both_returners:
             st.warning("⚡ **RECOMMANDATION : UNDER 21.5 JEUX**\n\n• **Style relanceurs :** Échanges courts et breaks rapides.")
         else:
-            st.info("🔵 **MARGE TROP FAIBLE / NO BET** (Ligne ajustée au marché)")
+            st.info("🔵 **MARGE TROP FAIBLE / NO BET**")
 
-    # 2. OVER / UNDER ACES
     with st.container(border=True):
         st.markdown(f"#### 💥 Over / Under Aces ({surface})")
         
@@ -696,7 +669,6 @@ with m1_col:
             st.info(f"🔵 **MARGE FAIBLE / NO BET** (Projeté : {total_projected_aces:.1f} Aces)")
 
 with m2_col:
-    # 3. OVER / UNDER DOUBLES FAUTES
     with st.container(border=True):
         st.markdown(f"#### ⚠️ Doubles Fautes ({surface})")
         
@@ -712,7 +684,6 @@ with m2_col:
         else:
             st.info("🔵 **MARGE FAIBLE / NO BET**")
 
-   # 4. HANDICAP SETS
     with st.container(border=True):
         st.markdown("#### 🛡️ Handicap Sets")
         
