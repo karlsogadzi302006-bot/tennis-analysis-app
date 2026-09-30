@@ -7,14 +7,6 @@ import pandas as pd
 import numpy as np
 
 # 1. Configuration obligatoire TOUT EN HAUT
-st.set_page_config(
-    page_title="Tennis ValueBet AI — Analytics ATP",
-    page_icon="🎾",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
-
-# 2. Styles CSS (Maintenant 'st' est bien défini)
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -49,98 +41,109 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* TITRES DE CATEGORIES PERSONNALISES PAR COULEUR */
+    /* TITRES DE CATÉGORIES PERSONNALISÉS PAR COULEUR */
     .cat-title-matchup {
-        color: #fb7185 !important; /* Rose Titanium */
+        color: #fb7185 !important;
         font-size: 1.25rem; font-weight: 800; margin-top: 18px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(251, 113, 133, 0.3); padding-bottom: 4px;
+        border-bottom: 2px solid rgba(251, 113, 133, 0.4); padding-bottom: 4px;
     }
     .cat-title-service {
-        color: #38bdf8 !important; /* Bleu Cyan */
+        color: #38bdf8 !important;
         font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(56, 189, 248, 0.3); padding-bottom: 4px;
+        border-bottom: 2px solid rgba(56, 189, 248, 0.4); padding-bottom: 4px;
     }
     .cat-title-h2h {
-        color: #c084fc !important; /* Violet Améthyste */
+        color: #c084fc !important;
         font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(192, 132, 252, 0.3); padding-bottom: 4px;
+        border-bottom: 2px solid rgba(192, 132, 252, 0.4); padding-bottom: 4px;
     }
     .cat-title-valuebet {
-        color: #f59e0b !important; /* Or / Ambre Néon */
+        color: #f59e0b !important;
         font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(245, 158, 11, 0.3); padding-bottom: 4px;
+        border-bottom: 2px solid rgba(245, 158, 11, 0.4); padding-bottom: 4px;
     }
     .cat-title-annexes {
-        color: #34d399 !important; /* Émeraude */
+        color: #34d399 !important;
         font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(52, 211, 153, 0.3); padding-bottom: 4px;
+        border-bottom: 2px solid rgba(52, 211, 153, 0.4); padding-bottom: 4px;
     }
 
-    /* CARTES JOUEURS (Section Matchup) */
+    /* CARTES JOUEURS EN-TÊTE */
     .player-card-a {
-        background: linear-gradient(145deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid rgba(244, 63, 94, 0.4);
+        background: linear-gradient(145deg, rgba(244, 63, 94, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%);
+        border: 1.5px solid #f43f5e;
+        box-shadow: 0 0 10px rgba(244, 63, 94, 0.15);
         border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
     }
     .player-card-b {
-        background: linear-gradient(145deg, rgba(52, 211, 153, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid rgba(52, 211, 153, 0.4);
+        background: linear-gradient(145deg, rgba(52, 211, 153, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%);
+        border: 1.5px solid #10b981;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
         border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
     }
     .player-name-a { font-size: 1.1rem !important; font-weight: 800; color: #fb7185; }
     .player-name-b { font-size: 1.1rem !important; font-weight: 800; color: #34d399; }
     
     .style-badge-a {
-        background: rgba(244, 63, 94, 0.15); color: #fecdd3; border: 1px solid rgba(244, 63, 94, 0.3);
+        background: rgba(244, 63, 94, 0.2); color: #fecdd3; border: 1px solid rgba(244, 63, 94, 0.5);
         padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
     }
     .style-badge-b {
-        background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.2); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.5);
         padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
     }
 
-    /* METRIQUES DE LA SECTION MATCHUP (ROSE / DORE) */
+    /* --- DÉLIMITATION STRICTE DES CASES DE METRIQUES --- */
+    [data-testid="stMetric"] {
+        background: #111827 !important; /* Fond plus foncé et bien distinct */
+        border-radius: 10px !important;
+        padding: 8px 6px !important;
+        text-align: center !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* Bordure Rose/Titanium pour les métriques Matchup */
     .card-matchup [data-testid="stMetric"] {
-        background: rgba(15, 23, 42, 0.8) !important;
-        border: 1px solid rgba(244, 63, 94, 0.2) !important;
+        border: 1.5px solid rgba(251, 113, 133, 0.4) !important;
+        box-shadow: 0 2px 8px rgba(251, 113, 133, 0.08) !important;
     }
     .card-matchup [data-testid="stMetricValue"] { color: #fbbf24 !important; }
 
-    /* METRIQUES DE LA SECTION SERVICE (CYAN / AZUR) */
+    /* Bordure Cyan pour les métriques Service */
     .card-service [data-testid="stMetric"] {
-        background: rgba(15, 23, 42, 0.8) !important;
-        border: 1px solid rgba(56, 189, 248, 0.25) !important;
+        border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
+        box-shadow: 0 2px 8px rgba(56, 189, 248, 0.08) !important;
     }
     .card-service [data-testid="stMetricValue"] { color: #38bdf8 !important; }
 
-    /* STYLE COMMUN DES CASES DE STATISTIQUES */
-    [data-testid="stMetric"] {
-        border-radius: 10px !important;
-        padding: 8px 6px !important; text-align: center !important; margin-bottom: 6px !important;
-    }
     [data-testid="stMetricValue"] {
-        font-size: 1.15rem !important; font-weight: 800 !important; line-height: 1.2 !important;
+        font-size: 1.2rem !important; font-weight: 800 !important; line-height: 1.2 !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 0.73rem !important; font-weight: 600 !important; color: #94a3b8 !important;
+        font-size: 0.75rem !important; font-weight: 700 !important; color: #cbd5e1 !important;
         white-space: normal !important; word-break: break-word !important;
     }
 
     /* BOÎTES D'ANALYSE */
     .analysis-box {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(251, 191, 36, 0.25); border-left: 4px solid #fbbf24;
+        background: rgba(17, 24, 39, 0.85);
+        border: 1px solid rgba(251, 191, 36, 0.4);
+        border-left: 4px solid #fbbf24;
         border-radius: 8px; padding: 12px; margin-top: 8px; margin-bottom: 16px;
-        font-size: 0.85rem !important; line-height: 1.4 !important; color: #e2e8f0;
+        font-size: 0.85rem !important; line-height: 1.4 !important; color: #f1f5f9;
     }
 
-    /* VALUEBET CARDS */
+    /* VALUEBET CARDS AVEC BORDURES FORTES */
     .ev-card-success {
-        background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.4);
+        background: rgba(16, 185, 129, 0.12);
+        border: 1.5px solid #10b981;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
         border-radius: 10px; padding: 12px; margin-bottom: 10px;
     }
     .ev-card-danger {
-        background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35);
+        background: rgba(239, 68, 68, 0.12);
+        border: 1.5px solid #ef4444;
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
         border-radius: 10px; padding: 12px; margin-bottom: 10px;
     }
 </style>
