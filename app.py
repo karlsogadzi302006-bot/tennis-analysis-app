@@ -446,7 +446,6 @@ prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
-
 # ---------------------------------------------------------
 # 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL
 # ---------------------------------------------------------
@@ -466,7 +465,7 @@ with col1:
     m1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
     m2.metric(f"Vs {surface}", f"{stats_a['surface_winrate']*100:.0f}%")
     m3.metric("Forme", f"{stats_a['last_10_wins']}/10")
-    m4.metric(f"Niveau", f"{stats_a['quality_score']:.1f}x")
+    m4.metric(f"Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
 
 with col2:
     st.markdown(f"""
@@ -482,13 +481,13 @@ with col2:
     m1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
     m2.metric(f"Vs {surface}", f"{stats_b['surface_winrate']*100:.0f}%")
     m3.metric("Forme", f"{stats_b['last_10_wins']}/10")
-    m4.metric(f"Niveau", f"{stats_b['quality_score']:.1f}x")
+    m4.metric(f"Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
 
 fav_surface = player_a if stats_a['surface_winrate'] >= stats_b['surface_winrate'] else player_b
-fav_form = player_a if stats_a['recent_form'] >= stats_b['recent_form'] else player_b
+fav_style = player_a if winrate_a_vs_b_style >= winrate_b_vs_a_style else player_b
 st.markdown(f"""
 <div class='analysis-box'>
-    💡 <b>Surface & Forme :</b> Avantage <b>{fav_surface}</b> sur {surface} ({max(stats_a['surface_winrate'], stats_b['surface_winrate'])*100:.0f}% V). Forme récente : <b>{fav_form}</b>.
+    💡 <b>Surface & Matchup :</b> Avantage <b>{fav_surface}</b> sur {surface} ({max(stats_a['surface_winrate'], stats_b['surface_winrate'])*100:.0f}% V). Meilleur historique vs le style adverse : <b>{fav_style}</b>.
 </div>
 """, unsafe_allow_html=True)
 
