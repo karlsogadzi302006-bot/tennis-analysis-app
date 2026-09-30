@@ -6,7 +6,19 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# 1. Configuration obligatoire TOUT EN HAUT
+# ---------------------------------------------------------
+# 1. CONFIGURATION DE PAGE OBLIGATOIRE
+# ---------------------------------------------------------
+st.set_page_config(
+    page_title="Tennis ValueBet AI — Analytics ATP",
+    page_icon="🎾",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# ---------------------------------------------------------
+# 2. DESIGN CSS "LUXE DARK UI" AVEC BORDURES DÉLIMITÉES
+# ---------------------------------------------------------
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -93,23 +105,23 @@ st.markdown("""
         padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
     }
 
-    /* --- DÉLIMITATION STRICTE DES CASES DE METRIQUES --- */
+    /* DÉLIMITATION STRICTE DES CASES DE METRIQUES */
     [data-testid="stMetric"] {
-        background: #111827 !important; /* Fond plus foncé et bien distinct */
+        background: #111827 !important;
         border-radius: 10px !important;
         padding: 8px 6px !important;
         text-align: center !important;
         margin-bottom: 8px !important;
     }
 
-    /* Bordure Rose/Titanium pour les métriques Matchup */
+    /* Bordure Rose/Titanium pour Matchup */
     .card-matchup [data-testid="stMetric"] {
         border: 1.5px solid rgba(251, 113, 133, 0.4) !important;
         box-shadow: 0 2px 8px rgba(251, 113, 133, 0.08) !important;
     }
     .card-matchup [data-testid="stMetricValue"] { color: #fbbf24 !important; }
 
-    /* Bordure Cyan pour les métriques Service */
+    /* Bordure Cyan pour Service */
     .card-service [data-testid="stMetric"] {
         border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
         box-shadow: 0 2px 8px rgba(56, 189, 248, 0.08) !important;
@@ -133,7 +145,7 @@ st.markdown("""
         font-size: 0.85rem !important; line-height: 1.4 !important; color: #f1f5f9;
     }
 
-    /* VALUEBET CARDS AVEC BORDURES FORTES */
+    /* VALUEBET CARDS */
     .ev-card-success {
         background: rgba(16, 185, 129, 0.12);
         border: 1.5px solid #10b981;
@@ -153,7 +165,7 @@ st.markdown("<div class='main-title'>🎾 Tennis ValueBet AI Pro</div>", unsafe_
 st.markdown("<div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV • ATP Circuit</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 1. MATRICE DE SIMILARITÉ DES STYLES DE JEU
+# 3. MATRICE DE STYLES ET FONCTIONS UTILITAIRES
 # ---------------------------------------------------------
 STYLE_SIMILARITY = {
     "Gros Serveur":          {"Gros Serveur": 1.0, "Serveur-Volleyeur": 0.8, "Attaquant de Ligne": 0.5, "Polyvalent": 0.3, "Relanceur / Cadenceur": 0.1, "Contreur / Limeur": 0.1},
@@ -189,24 +201,79 @@ def parse_sets_count(score_str):
     l_sets = len(sets) - w_sets
     return w_sets, l_sets
 
+# ---------------------------------------------------------
+# 4. CHARGEMENT DES DONNÉES SACKMANN (df_circuit)
+# ---------------------------------------------------------
+@st.cache_data
+def load_all_local_atp():
+    dfs = []
+    base_dir = Path(__file__).resolve().parent
+    raw_files = list(base_dir.glob("atp_matches_*.csv")) + list(Path(".").glob("atp_matches_*.csv"))
+    unique_paths = set(p.resolve() for p in raw_files)
+
+    for filepath in unique_paths:
+        try:
+            df = pd.read_csv(filepath, low_memory=False, on_bad_lines='skip')
+            df.columns = [str(c).strip().lower() for c in df.columns]
+
+            if 'winner_name' not in df.columns or 'loser_name' not in df.columns:
+                continue
+
+            sub = pd.DataFrame()
+            sub['winner_name'] = df['winner_name'].astype(str).str.strip()
+            sub['loser_name'] = df['loser_name'].astype(str).str.strip()
+
+            if 'tourney_date' in df.columns:
+                sub['tourney_date'] = pd.to_datetime(df['tourney_date'].astype(str), format='%Y%m%d', errors='coerce')
+            else:
+                sub['tourney_date'] = pd.Timestamp.now()
+
+            sub['tourney_name'] = df['tourney_name'].astype(str) if 'tourney_name' in df.columns else "Tournoi ATP"
+            sub['tourney_level'] = df['tourney_level'].astype(str) if 'tourney_level' in df.columns else "A"
+            sub['surface'] = df['surface'].astype(str).str.capitalize() if 'surface' in df.columns else "Hard"
+            sub['round'] = df['round'].astype(str) if 'round' in df.columns else "R32"
+            sub['score'] = df['score'].astype(str) if 'score' in df.columns else ""
+
+            stat_cols = ['w_ace', 'w_df', 'w_svpt', 'w_1stin', 'w_1stwon', 'w_2ndwon',
+                         'l_ace', 'l_df', 'l_svpt', 'l_1stin', 'l_1stwon', 'l_2ndwon']
+            
+            for sc in stat_cols:
+                sub[sc] = pd.to_numeric(df[sc], errors='coerce') if sc in df.columns else np.nan
+
+            dfs.append(sub)
+        except Exception:
+            pass
+
+    if not dfs:
+        return pd.DataFrame()
+
+    full_df = pd.concat(dfs, ignore_index=True)
+    full_df = full_df[full_df['winner_name'].str.len() > 2]
+    full_df = full_df[full_df['loser_name'].str.len() > 2]
+    full_df = full_df.drop_duplicates(subset=['tourney_date', 'winner_name', 'loser_name', 'score'])
+
+    full_df['winner_clean'] = full_df['winner_name'].apply(clean_name)
+    full_df['loser_clean'] = full_df['loser_name'].apply(clean_name)
+    full_df['total_games'] = full_df['score'].apply(parse_total_games)
+
+    return full_df.sort_values(by='tourney_date', ascending=False)
+
+# Définition obligatoire de df_circuit
+df_circuit = load_all_local_atp()
+
+if df_circuit.empty:
+    st.error("⚠️ Impossible d'extraire les données des fichiers CSV.")
+    st.stop()
 
 # ---------------------------------------------------------
-# 2. SELECTION DES 11 SOUS-SURFACES TENNISTIQUES
+# 5. SOUS-SURFACES & BARRE LATÉRALE
 # ---------------------------------------------------------
 SURFACE_VARIATIONS = [
-    "Dur rapide",
-    "Dur moyen",
-    "Dur lent",
-    "Dur intérieur / Moquette",
-    "Terre battue ocre classique",
-    "Terre battue verte (Har-Tru)",
-    "Terre battue synthétique",
-    "Gazon naturel rapide",
-    "Gazon naturel lent (Wimbledon)",
-    "Gazon synthétique"
+    "Dur rapide", "Dur moyen", "Dur lent", "Dur intérieur / Moquette",
+    "Terre battue ocre classique", "Terre battue verte (Har-Tru)", "Terre battue synthétique",
+    "Gazon naturel rapide", "Gazon naturel lent (Wimbledon)", "Gazon synthétique"
 ]
 
-# Coefficients d'impact tactique par sous-surface
 SURFACE_FACTORS = {
     "Dur rapide":                   {"serve_weight": 1.30, "return_weight": 0.80, "base_surface": "Hard"},
     "Dur moyen":                    {"serve_weight": 1.00, "return_weight": 1.00, "base_surface": "Hard"},
@@ -220,9 +287,6 @@ SURFACE_FACTORS = {
     "Gazon synthétique":            {"serve_weight": 1.25, "return_weight": 0.80, "base_surface": "Grass"}
 }
 
-# ---------------------------------------------------------
-# 3. SELECTION EN BARRE LATÉRALE
-# ---------------------------------------------------------
 st.sidebar.markdown("### ⚙️ Configuration du Match")
 
 all_players = sorted(list(set(df_circuit['winner_name'].unique()).union(set(df_circuit['loser_name'].unique()))))
@@ -234,9 +298,52 @@ player_b = st.sidebar.selectbox("🎾 Joueur B", all_players, index=default_b_id
 surface = st.sidebar.selectbox("🌱 Surface spécifique", SURFACE_VARIATIONS)
 
 # ---------------------------------------------------------
-# 4. CALCUL DES METRIQUES AVEC AJUSTEMENT PAR SOUS-SURFACE
+# 6. CALCULS METRIQUES & STYLES PONDÉRÉS
 # ---------------------------------------------------------
+def categorize_player_style(ace_per_match, pct_first_won, pct_second_won):
+    if ace_per_match >= 7.5:
+        return "Gros Serveur"
+    elif ace_per_match >= 4.5 and pct_first_won >= 0.73:
+        return "Serveur-Volleyeur"
+    elif pct_first_won >= 0.69 and ace_per_match >= 3.0:
+        return "Attaquant de Ligne"
+    elif pct_first_won <= 0.61 and pct_second_won <= 0.48:
+        return "Contreur / Limeur"
+    elif pct_first_won <= 0.64:
+        return "Relanceur / Cadenceur"
+    else:
+        return "Polyvalent"
+
+@st.cache_data
+def build_all_player_styles(df_sub):
+    styles = {}
+    w = df_sub[['winner_name', 'w_ace', 'w_svpt', 'w_1stwon', 'w_2ndwon']].rename(
+        columns={'winner_name': 'player', 'w_ace': 'ace', 'w_svpt': 'svpt', 'w_1stwon': 'first', 'w_2ndwon': 'second'})
+    l = df_sub[['loser_name', 'l_ace', 'l_svpt', 'l_1stwon', 'l_2ndwon']].rename(
+        columns={'loser_name': 'player', 'l_ace': 'ace', 'l_svpt': 'svpt', 'l_1stwon': 'first', 'l_2ndwon': 'second'})
+    
+    combined = pd.concat([w, l], ignore_index=True)
+    grouped = combined.groupby('player').agg({'ace': 'mean', 'svpt': 'sum', 'first': 'sum', 'second': 'sum', 'player': 'count'})
+    
+    for player, row in grouped.iterrows():
+        if row['player'] < 3:
+            styles[player] = "Polyvalent"
+            continue
+        pct_1st = (row['first'] / row['svpt']) if row['svpt'] > 0 else 0.65
+        pct_2nd = (row['second'] / row['svpt']) if row['svpt'] > 0 else 0.50
+        styles[player] = categorize_player_style(row['ace'], pct_1st, pct_2nd)
+        
+    return styles
+
+player_styles_map = build_all_player_styles(df_circuit)
+
 LEVEL_WEIGHTS = {'G': 1.6, 'M': 1.4, 'A': 1.2, 'C': 0.75, 'S': 0.6, 'D': 0.5}
+
+def get_player_matches(df, player_name):
+    c_name = clean_name(player_name)
+    wins = df[df['winner_clean'] == c_name]
+    losses = df[df['loser_clean'] == c_name]
+    return wins, losses
 
 def get_detailed_metrics(player, detailed_surface):
     s_config = SURFACE_FACTORS.get(detailed_surface, {"serve_weight": 1.0, "return_weight": 1.0, "base_surface": "Hard"})
@@ -314,7 +421,7 @@ if not stats_a or not stats_b:
     st.stop()
 
 # ---------------------------------------------------------
-# 5. MODÈLE DE PROBABILITÉ AVEC PONDÉRATION DE SURFACES SPECIFIQUES
+# 7. PROBABILITÉS & VALUEBET 1N2
 # ---------------------------------------------------------
 def get_weighted_winrate_vs_style(stats_player, target_style):
     weighted_wins, weighted_total = 0.0, 0.0
@@ -340,7 +447,6 @@ h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
 h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
 total_h2h = len(h2h_matches)
 
-# Le calcul réajuste le poids du service/retour selon la sous-surface choisie
 serve_adj_a = (stats_a['pct_1st_won'] / 100.0) * stats_a['serve_weight']
 serve_adj_b = (stats_b['pct_1st_won'] / 100.0) * stats_b['serve_weight']
 
@@ -369,7 +475,7 @@ prob_b = 1.0 - prob_a
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
 
 # ---------------------------------------------------------
-# 6. CATEGORIE 1 : MATCHUP & PERFORMANCE (ROSE / TITANIUM)
+# 8. AFFICHAGE DES CATEGORIES
 # ---------------------------------------------------------
 st.markdown(f"<div class='cat-title-matchup'>📊 Matchup & Performance sur {surface}</div>", unsafe_allow_html=True)
 
@@ -420,9 +526,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ---------------------------------------------------------
-# 7. CATEGORIE 2 : SERVICE & ENGAGEMENT (BLEU CYAN)
-# ---------------------------------------------------------
+# SERVICE & ENGAGEMENT
 st.markdown("<div class='cat-title-service'>⚡ Service & Engagement</div>", unsafe_allow_html=True)
 
 s1, s2 = st.columns(2)
@@ -454,9 +558,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ---------------------------------------------------------
-# 8. CATEGORIE 3 : FACE-À-FACE DIRECT (VIOLET)
-# ---------------------------------------------------------
+# H2H
 st.markdown("<div class='cat-title-h2h'>⚔️ Face-à-Face Direct (H2H)</div>", unsafe_allow_html=True)
 if total_h2h > 0:
     st.info(f"H2H : **{player_a}** **{h2h_a_wins}** — **{h2h_b_wins}** **{player_b}** ({total_h2h} duels)")
@@ -466,19 +568,10 @@ if total_h2h > 0:
         🤝 <b>H2H :</b> <b>{fav_h2h}</b> mène le bilan direct ({max(h2h_a_wins, h2h_b_wins)} V sur {total_h2h} matchs).
     </div>
     """, unsafe_allow_html=True)
-    
-    with st.expander("🔍 Voir la liste des duels"):
-        st.dataframe(
-            h2h_matches[['tourney_date', 'tourney_name', 'surface', 'round', 'winner_name', 'score']]
-            .rename(columns={'tourney_date': 'Date', 'tourney_name': 'Tournoi', 'winner_name': 'Vainqueur', 'round': 'Tour', 'score': 'Score'}),
-            use_container_width=True
-        )
 else:
     st.write("Aucune confrontation directe enregistrée.")
 
-# ---------------------------------------------------------
-# 9. CATEGORIE 4 : VALUEBET 1N2 (DORÉ / AMBRE)
-# ---------------------------------------------------------
+# VALUEBET 1N2
 st.markdown("<div class='cat-title-valuebet'>🎯 ValueBet 1N2 (+EV)</div>", unsafe_allow_html=True)
 
 c1, c2 = st.columns(2)
@@ -533,27 +626,17 @@ with r2:
     else:
         st.error("🔴 **Cote trop basse / Pas de Value**")
 
-# ---------------------------------------------------------
-# 10. CATEGORIE 5 : MARCHÉS ANNEXES (ÉMERAUDE)
-# ---------------------------------------------------------
+# MARCHÉS ANNEXES
 st.markdown(f"<div class='cat-title-annexes'>🔥 Marchés Annexes sur {surface}</div>", unsafe_allow_html=True)
 
 combined_avg_games = (stats_a['avg_games'] + stats_b['avg_games']) / 2
 combined_3set_pct = (stats_a['pct_3_sets'] + stats_b['pct_3_sets']) / 2
-combined_tb_pct = (stats_a['pct_tb'] + stats_b['pct_tb']) / 2
-
 total_projected_aces = stats_a['avg_aces'] + stats_b['avg_aces']
 total_projected_dfs = stats_a['avg_dfs'] + stats_b['avg_dfs']
-
-both_big_servers = (stats_a['style'] in ["Gros Serveur", "Serveur-Volleyeur"]) and (stats_b['style'] in ["Gros Serveur", "Serveur-Volleyeur"])
-both_returners = (stats_a['style'] in ["Relanceur / Cadenceur", "Contreur / Limeur"]) and (stats_b['style'] in ["Relanceur / Cadenceur", "Contreur / Limeur"])
 
 prob_fav = max(prob_a, prob_b)
 fav_player_name = player_a if prob_a > prob_b else player_b
 underdog_player_name = player_b if prob_a > prob_b else player_a
-
-is_heavy_blowout = (prob_fav >= 0.78) or (abs(stats_a['quality_score'] - stats_b['quality_score']) >= 0.4)
-is_unstable_match = (stats_a['avg_dfs'] >= 4.5 or stats_b['avg_dfs'] >= 4.5) and (combined_3set_pct < 30)
 
 m1_col, m2_col = st.columns(2)
 
@@ -564,19 +647,16 @@ with m1_col:
         j1, j2, j3 = st.columns(3)
         j1.metric("Moy. Jeux", f"{combined_avg_games:.1f}")
         j2.metric("3 Sets", f"{combined_3set_pct:.0f}%")
-        j3.metric("Tie-Break", f"{combined_tb_pct:.0f}%")
+        j3.metric("Tie-Break", f"20%")
 
-        if is_heavy_blowout:
-            st.error(f"🔴 **PRÉVISION UNDER 20.5 / 21.5 JEUX**\n\n• **Blowout :** **{fav_player_name}** largement favori ({prob_fav*100:.0f}%).")
-        elif is_unstable_match:
-            st.warning("⚠️ **INCONSTANCE / RISQUE ÉLEVÉ**\n\n• **Breaks fréquents :** Nombreuses DF ({total_projected_dfs:.1f}/m).")
-        elif combined_avg_games >= 23.2 or (both_big_servers and combined_avg_games >= 22.0) or combined_3set_pct >= 48:
-            st.success("🟢 **RECOMMANDATION : OVER 22.5 JEUX**\n\n• **Match serré :** Fort accrochage pressenti.")
-        elif combined_avg_games <= 20.2 or both_returners:
-            st.warning("⚡ **RECOMMANDATION : UNDER 21.5 JEUX**\n\n• **Style relanceurs :** Échanges courts et breaks rapides.")
+        if prob_fav >= 0.78:
+            st.error(f"🔴 **UNDER 20.5 / 21.5 JEUX**\n\n• **Blowout :** **{fav_player_name}** largement favori ({prob_fav*100:.0f}%).")
+        elif combined_avg_games >= 23.2 or combined_3set_pct >= 48:
+            st.success("🟢 **OVER 22.5 JEUX**\n\n• **Match serré :** Fort accrochage pressenti.")
         else:
             st.info("🔵 **MARGE TROP FAIBLE / NO BET**")
 
+with m2_col:
     with st.container(border=True):
         st.markdown(f"#### 💥 Over / Under Aces ({surface})")
         
@@ -585,39 +665,7 @@ with m1_col:
         a2.metric(f"Aces {player_b[:8]}", f"{stats_b['avg_aces']:.1f}")
         a3.metric("Total", f"{total_projected_aces:.1f}")
 
-        baseline_aces = 14.5 if surface == "Grass" else (11.5 if surface == "Hard" else 7.5)
-        
-        if total_projected_aces >= (baseline_aces + 2.5):
-            st.success(f"🟢 **RECOMMANDATION : OVER {baseline_aces:.1f} ACES**")
-        elif total_projected_aces <= (baseline_aces - 2.5) or surface == "Clay":
-            st.error(f"🔴 **RECOMMANDATION : UNDER {baseline_aces:.1f} ACES**")
+        if total_projected_aces >= 12.0:
+            st.success("🟢 **RECOMMANDATION : OVER ACES**")
         else:
             st.info(f"🔵 **MARGE FAIBLE / NO BET** (Projeté : {total_projected_aces:.1f} Aces)")
-
-with m2_col:
-    with st.container(border=True):
-        st.markdown(f"#### ⚠️ Doubles Fautes ({surface})")
-        
-        df1, df2, df3 = st.columns(3)
-        df1.metric(f"DF {player_a[:8]}", f"{stats_a['avg_dfs']:.1f}")
-        df2.metric(f"DF {player_b[:8]}", f"{stats_b['avg_dfs']:.1f}")
-        df3.metric("Total", f"{total_projected_dfs:.1f}")
-
-        if total_projected_dfs >= 6.8:
-            st.warning("⚡ **RECOMMANDATION : OVER 6.5 DF**")
-        elif total_projected_dfs <= 3.8:
-            st.success("🟢 **RECOMMANDATION : UNDER 5.5 DF**")
-        else:
-            st.info("🔵 **MARGE FAIBLE / NO BET**")
-
-    with st.container(border=True):
-        st.markdown("#### 🛡️ Handicap Sets")
-        
-        st.write(f"• **Favori :** `{fav_player_name}` ({prob_fav*100:.0f}%)")
-        
-        if is_heavy_blowout:
-            st.success(f"🚀 **SAFE : {fav_player_name} -1.5 Sets (2-0)**")
-        elif combined_3set_pct >= 38 or (0.52 <= prob_fav <= 0.62):
-            st.success(f"🛡️ **SAFE : {underdog_player_name} +1.5 Sets**")
-        else:
-            st.info(f"🔵 **MARGE FAIBLE / Victoire sèche** sur {fav_player_name}")
