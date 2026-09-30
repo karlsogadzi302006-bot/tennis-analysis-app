@@ -189,71 +189,39 @@ def parse_sets_count(score_str):
     l_sets = len(sets) - w_sets
     return w_sets, l_sets
 
-# ---------------------------------------------------------
-# 2. CHARGEMENT DES CSV SACKMANN
-# ---------------------------------------------------------
-@st.cache_data
-def load_all_local_atp():
-    dfs = []
-    base_dir = Path(__file__).resolve().parent
-    raw_files = list(base_dir.glob("atp_matches_*.csv")) + list(Path(".").glob("atp_matches_*.csv"))
-    unique_paths = set(p.resolve() for p in raw_files)
-
-    for filepath in unique_paths:
-        try:
-            df = pd.read_csv(filepath, low_memory=False, on_bad_lines='skip')
-            df.columns = [str(c).strip().lower() for c in df.columns]
-
-            if 'winner_name' not in df.columns or 'loser_name' not in df.columns:
-                continue
-
-            sub = pd.DataFrame()
-            sub['winner_name'] = df['winner_name'].astype(str).str.strip()
-            sub['loser_name'] = df['loser_name'].astype(str).str.strip()
-
-            if 'tourney_date' in df.columns:
-                sub['tourney_date'] = pd.to_datetime(df['tourney_date'].astype(str), format='%Y%m%d', errors='coerce')
-            else:
-                sub['tourney_date'] = pd.Timestamp.now()
-
-            sub['tourney_name'] = df['tourney_name'].astype(str) if 'tourney_name' in df.columns else "Tournoi ATP"
-            sub['tourney_level'] = df['tourney_level'].astype(str) if 'tourney_level' in df.columns else "A"
-            sub['surface'] = df['surface'].astype(str).str.capitalize() if 'surface' in df.columns else "Hard"
-            sub['round'] = df['round'].astype(str) if 'round' in df.columns else "R32"
-            sub['score'] = df['score'].astype(str) if 'score' in df.columns else ""
-
-            stat_cols = ['w_ace', 'w_df', 'w_svpt', 'w_1stin', 'w_1stwon', 'w_2ndwon',
-                         'l_ace', 'l_df', 'l_svpt', 'l_1stin', 'l_1stwon', 'l_2ndwon']
-            
-            for sc in stat_cols:
-                sub[sc] = pd.to_numeric(df[sc], errors='coerce') if sc in df.columns else np.nan
-
-            dfs.append(sub)
-        except Exception:
-            pass
-
-    if not dfs:
-        return pd.DataFrame()
-
-    full_df = pd.concat(dfs, ignore_index=True)
-    full_df = full_df[full_df['winner_name'].str.len() > 2]
-    full_df = full_df[full_df['loser_name'].str.len() > 2]
-    full_df = full_df.drop_duplicates(subset=['tourney_date', 'winner_name', 'loser_name', 'score'])
-
-    full_df['winner_clean'] = full_df['winner_name'].apply(clean_name)
-    full_df['loser_clean'] = full_df['loser_name'].apply(clean_name)
-    full_df['total_games'] = full_df['score'].apply(parse_total_games)
-
-    return full_df.sort_values(by='tourney_date', ascending=False)
-
-df_circuit = load_all_local_atp()
-
-if df_circuit.empty:
-    st.error("⚠️ Impossible d'extraire les données des fichiers CSV.")
-    st.stop()
 
 # ---------------------------------------------------------
-# 3. SELECTION DES JOUEURS
+# 2. SELECTION DES 11 SOUS-SURFACES TENNISTIQUES
+# ---------------------------------------------------------
+SURFACE_VARIATIONS = [
+    "Dur rapide",
+    "Dur moyen",
+    "Dur lent",
+    "Dur intérieur / Moquette",
+    "Terre battue ocre classique",
+    "Terre battue verte (Har-Tru)",
+    "Terre battue synthétique",
+    "Gazon naturel rapide",
+    "Gazon naturel lent (Wimbledon)",
+    "Gazon synthétique"
+]
+
+# Coefficients d'impact tactique par sous-surface
+SURFACE_FACTORS = {
+    "Dur rapide":                   {"serve_weight": 1.30, "return_weight": 0.80, "base_surface": "Hard"},
+    "Dur moyen":                    {"serve_weight": 1.00, "return_weight": 1.00, "base_surface": "Hard"},
+    "Dur lent":                     {"serve_weight": 0.85, "return_weight": 1.15, "base_surface": "Hard"},
+    "Dur intérieur / Moquette":     {"serve_weight": 1.35, "return_weight": 0.75, "base_surface": "Hard"},
+    "Terre battue ocre classique":  {"serve_weight": 0.70, "return_weight": 1.30, "base_surface": "Clay"},
+    "Terre battue verte (Har-Tru)": {"serve_weight": 0.80, "return_weight": 1.20, "base_surface": "Clay"},
+    "Terre battue synthétique":     {"serve_weight": 0.85, "return_weight": 1.15, "base_surface": "Clay"},
+    "Gazon naturel rapide":         {"serve_weight": 1.40, "return_weight": 0.70, "base_surface": "Grass"},
+    "Gazon naturel lent (Wimbledon)":{"serve_weight": 1.10, "return_weight": 0.95, "base_surface": "Grass"},
+    "Gazon synthétique":            {"serve_weight": 1.25, "return_weight": 0.80, "base_surface": "Grass"}
+}
+
+# ---------------------------------------------------------
+# 3. SELECTION EN BARRE LATÉRALE
 # ---------------------------------------------------------
 st.sidebar.markdown("### ⚙️ Configuration du Match")
 
@@ -263,57 +231,17 @@ player_a = st.sidebar.selectbox("🎾 Joueur A", all_players, index=0)
 default_b_idx = 1 if len(all_players) > 1 else 0
 player_b = st.sidebar.selectbox("🎾 Joueur B", all_players, index=default_b_idx)
 
-surface = st.sidebar.selectbox("🌱 Surface de jeu", ["Hard", "Clay", "Grass"])
+surface = st.sidebar.selectbox("🌱 Surface spécifique", SURFACE_VARIATIONS)
 
 # ---------------------------------------------------------
-# 4. CALCULS METRIQUES & STYLES + PONDÉRATION ADAPTÉE
+# 4. CALCUL DES METRIQUES AVEC AJUSTEMENT PAR SOUS-SURFACE
 # ---------------------------------------------------------
-LEVEL_WEIGHTS = {'G': 1.4, 'M': 1.25, 'A': 1.1, 'C': 0.9, 'S': 0.8, 'D': 0.7}
+LEVEL_WEIGHTS = {'G': 1.6, 'M': 1.4, 'A': 1.2, 'C': 0.75, 'S': 0.6, 'D': 0.5}
 
-def get_player_matches(df, player_name):
-    c_name = clean_name(player_name)
-    wins = df[df['winner_clean'] == c_name]
-    losses = df[df['loser_clean'] == c_name]
-    return wins, losses
-
-def categorize_player_style(ace_per_match, pct_first_won, pct_second_won):
-    if ace_per_match >= 7.5:
-        return "Gros Serveur"
-    elif ace_per_match >= 4.5 and pct_first_won >= 0.73:
-        return "Serveur-Volleyeur"
-    elif pct_first_won >= 0.69 and ace_per_match >= 3.0:
-        return "Attaquant de Ligne"
-    elif pct_first_won <= 0.61 and pct_second_won <= 0.48:
-        return "Contreur / Limeur"
-    elif pct_first_won <= 0.64:
-        return "Relanceur / Cadenceur"
-    else:
-        return "Polyvalent"
-
-@st.cache_data
-def build_all_player_styles(df_sub):
-    styles = {}
-    w = df_sub[['winner_name', 'w_ace', 'w_svpt', 'w_1stwon', 'w_2ndwon']].rename(
-        columns={'winner_name': 'player', 'w_ace': 'ace', 'w_svpt': 'svpt', 'w_1stwon': 'first', 'w_2ndwon': 'second'})
-    l = df_sub[['loser_name', 'l_ace', 'l_svpt', 'l_1stwon', 'l_2ndwon']].rename(
-        columns={'loser_name': 'player', 'l_ace': 'ace', 'l_svpt': 'svpt', 'l_1stwon': 'first', 'l_2ndwon': 'second'})
+def get_detailed_metrics(player, detailed_surface):
+    s_config = SURFACE_FACTORS.get(detailed_surface, {"serve_weight": 1.0, "return_weight": 1.0, "base_surface": "Hard"})
+    base_surf = s_config["base_surface"]
     
-    combined = pd.concat([w, l], ignore_index=True)
-    grouped = combined.groupby('player').agg({'ace': 'mean', 'svpt': 'sum', 'first': 'sum', 'second': 'sum', 'player': 'count'})
-    
-    for player, row in grouped.iterrows():
-        if row['player'] < 3:
-            styles[player] = "Polyvalent"
-            continue
-        pct_1st = (row['first'] / row['svpt']) if row['svpt'] > 0 else 0.65
-        pct_2nd = (row['second'] / row['svpt']) if row['svpt'] > 0 else 0.50
-        styles[player] = categorize_player_style(row['ace'], pct_1st, pct_2nd)
-        
-    return styles
-
-player_styles_map = build_all_player_styles(df_circuit)
-
-def get_detailed_metrics(player, surface_match):
     p_wins, p_losses = get_player_matches(df_circuit, player)
     total_m = len(p_wins) + len(p_losses)
     if total_m == 0:
@@ -322,23 +250,21 @@ def get_detailed_metrics(player, surface_match):
     w_levels = p_wins['tourney_level'].map(LEVEL_WEIGHTS).fillna(1.0) if len(p_wins) > 0 else pd.Series([1.0])
     l_levels = p_losses['tourney_level'].map(LEVEL_WEIGHTS).fillna(1.0) if len(p_losses) > 0 else pd.Series([1.0])
     
-    quality_score = (w_levels.sum() * 1.1) / (w_levels.sum() + l_levels.sum()) if (w_levels.sum() + l_levels.sum()) > 0 else 1.0
+    avg_tourney_level = (w_levels.sum() + l_levels.sum()) / total_m if total_m > 0 else 1.0
 
     overall_winrate = len(p_wins) / total_m
     all_matches = pd.concat([p_wins.assign(is_win=1), p_losses.assign(is_win=0)]).sort_values(by='tourney_date', ascending=False)
     last_10 = all_matches.head(10)
     recent_form = last_10['is_win'].mean() if len(last_10) > 0 else 0.5
     
-    surf_wins = p_wins[p_wins['surface'] == surface_match]
-    surf_losses = p_losses[p_losses['surface'] == surface_match]
+    surf_wins = p_wins[p_wins['surface'] == base_surf]
+    surf_losses = p_losses[p_losses['surface'] == base_surf]
     surf_matches = pd.concat([surf_wins.assign(is_win=1), surf_losses.assign(is_win=0)]).sort_values(by='tourney_date', ascending=False)
     
     total_surf = len(surf_matches)
     surface_winrate = len(surf_wins) / total_surf if total_surf >= 3 else overall_winrate
     
     target_matches = surf_matches.head(12) if total_surf >= 5 else all_matches.head(12)
-    
-    titles = len(p_wins[p_wins['round'].astype(str).str.upper().isin(['F', 'THE FINAL', 'FINAL'])])
     
     w_surf = target_matches[target_matches['is_win'] == 1]
     l_surf = target_matches[target_matches['is_win'] == 0]
@@ -356,7 +282,6 @@ def get_detailed_metrics(player, surface_match):
     avg_games_surf = target_matches['total_games'].dropna().mean()
     
     three_sets_count = 0
-    tb_count = 0
     valid_scores_count = 0
     for s_str in target_matches['score']:
         w_s, l_s = parse_sets_count(s_str)
@@ -364,24 +289,21 @@ def get_detailed_metrics(player, surface_match):
             valid_scores_count += 1
             if (w_s + l_s) >= 3:
                 three_sets_count += 1
-        if "7-6" in str(s_str) or "6-7" in str(s_str):
-            tb_count += 1
 
     pct_3_sets = (three_sets_count / valid_scores_count * 100) if valid_scores_count > 0 else 30.0
-    pct_tb = (tb_count / len(target_matches) * 100) if len(target_matches) > 0 else 20.0
 
     return {
         "player_name": player, "overall_winrate": overall_winrate, "recent_form": recent_form,
         "surface_winrate": surface_winrate, "style": player_styles_map.get(player, "Polyvalent"),
-        "total_matches": total_m, "total_wins": len(p_wins), "total_losses": len(p_losses),
-        "total_surf_matches": total_surf, "quality_score": quality_score,
-        "last_10_wins": int(recent_form * len(last_10)), "titles": titles,
-        "avg_aces": aces.mean() if len(aces) > 0 else 0.0,
+        "total_matches": total_m, "avg_tourney_level": avg_tourney_level,
+        "last_10_wins": int(recent_form * len(last_10)),
+        "avg_aces": aces.mean() * s_config["serve_weight"] if len(aces) > 0 else 0.0,
         "avg_dfs": dfs_count.mean() if len(dfs_count) > 0 else 0.0,
         "pct_1st_in": pct_1st_in, "pct_1st_won": pct_1st_won,
         "avg_games": avg_games_surf if not np.isnan(avg_games_surf) else 22.0,
-        "pct_3_sets": pct_3_sets, "pct_tb": pct_tb,
-        "p_wins": p_wins, "p_losses": p_losses
+        "pct_3_sets": pct_3_sets, "pct_tb": 20.0,
+        "p_wins": p_wins, "p_losses": p_losses,
+        "serve_weight": s_config["serve_weight"], "return_weight": s_config["return_weight"]
     }
 
 stats_a = get_detailed_metrics(player_a, surface)
@@ -392,7 +314,7 @@ if not stats_a or not stats_b:
     st.stop()
 
 # ---------------------------------------------------------
-# 5. MODÈLE ELO & MATCHUP TACTIQUE (VS STYLE INCLUS)
+# 5. MODÈLE DE PROBABILITÉ AVEC PONDÉRATION DE SURFACES SPECIFIQUES
 # ---------------------------------------------------------
 def get_weighted_winrate_vs_style(stats_player, target_style):
     weighted_wins, weighted_total = 0.0, 0.0
@@ -418,34 +340,34 @@ h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
 h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
 total_h2h = len(h2h_matches)
 
-# RATING GLOBAL : Incorpore fortement la Surface (350 pts) ET le Matchup vs Style (250 pts)
+# Le calcul réajuste le poids du service/retour selon la sous-surface choisie
+serve_adj_a = (stats_a['pct_1st_won'] / 100.0) * stats_a['serve_weight']
+serve_adj_b = (stats_b['pct_1st_won'] / 100.0) * stats_b['serve_weight']
+
 rating_a = (
-    (stats_a['surface_winrate'] * 350) + 
-    (winrate_a_vs_b_style * 250) + 
-    (stats_a['overall_winrate'] * 100) + 
-    (stats_a['recent_form'] * 150) + 
-    (stats_a['quality_score'] * 150)
+    (stats_a['surface_winrate'] * stats_a['avg_tourney_level'] * 320) + 
+    (winrate_a_vs_b_style * 200) + 
+    (stats_a['recent_form'] * 150) +
+    (serve_adj_a * 100)
 )
 
 rating_b = (
-    (stats_b['surface_winrate'] * 350) + 
-    (winrate_b_vs_a_style * 250) + 
-    (stats_b['overall_winrate'] * 100) + 
-    (stats_b['recent_form'] * 150) + 
-    (stats_b['quality_score'] * 150)
+    (stats_b['surface_winrate'] * stats_b['avg_tourney_level'] * 320) + 
+    (winrate_b_vs_a_style * 200) + 
+    (stats_b['recent_form'] * 150) +
+    (serve_adj_b * 100)
 )
 
-# Ajustement selon l'historique H2H
 if total_h2h > 0:
     rating_a += (h2h_a_wins - h2h_b_wins) * 30
     rating_b += (h2h_b_wins - h2h_a_wins) * 30
 
-# Calcul de la probabilité logistique (Diviseur 500 pour garder une distribution réaliste)
 prob_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 500.0))
 prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
+
 # ---------------------------------------------------------
 # 6. CATEGORIE 1 : MATCHUP & PERFORMANCE (ROSE / TITANIUM)
 # ---------------------------------------------------------
