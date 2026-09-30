@@ -44,7 +44,7 @@ st.markdown("""
         margin-bottom: 12px;
     }
 
-    /* FORCE LES COLONNES CÔTE À CÔTE MÊME SUR MOBILE */
+    /* FORCE LES COLONNES CÔTE À CÔTE SUR MOBILE */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -57,7 +57,7 @@ st.markdown("""
         flex: 1 1 0% !important;
     }
 
-    /* Chiffres des métriques Streamlit ajustés pour mobile */
+    /* Métriques Streamlit */
     [data-testid="stMetricValue"] {
         font-size: 0.95rem !important;
         font-weight: 700 !important;
@@ -70,7 +70,7 @@ st.markdown("""
         text-overflow: ellipsis !important;
     }
 
-    /* Cartes Joueurs Compactes */
+    /* Cartes Joueurs */
     .player-card {
         background: #131722;
         border: 1px solid #1e293b;
@@ -104,7 +104,6 @@ st.markdown("""
         text-transform: uppercase;
     }
 
-    /* Encadrés d'analyse contextuels */
     .analysis-box {
         background: rgba(30, 41, 59, 0.5);
         border-left: 3px solid #38bdf8;
@@ -116,7 +115,6 @@ st.markdown("""
         color: #cbd5e1;
     }
 
-    /* Cartes EV */
     .ev-card-success {
         background: rgba(34, 197, 94, 0.05);
         border: 1px solid rgba(34, 197, 94, 0.3);
@@ -132,7 +130,6 @@ st.markdown("""
         margin-bottom: 8px;
     }
 
-    /* Images ajustées pour mobile */
     [data-testid="stImage"] img {
         border-radius: 8px;
         max-height: 120px;
@@ -210,6 +207,7 @@ def load_all_local_atp():
                 sub['tourney_date'] = pd.Timestamp.now()
 
             sub['tourney_name'] = df['tourney_name'].astype(str) if 'tourney_name' in df.columns else "Tournoi ATP"
+            sub['tourney_level'] = df['tourney_level'].astype(str) if 'tourney_level' in df.columns else "A"
             sub['surface'] = df['surface'].astype(str).str.capitalize() if 'surface' in df.columns else "Hard"
             sub['round'] = df['round'].astype(str) if 'round' in df.columns else "R32"
             sub['score'] = df['score'].astype(str) if 'score' in df.columns else ""
@@ -241,13 +239,13 @@ def load_all_local_atp():
 df_circuit = load_all_local_atp()
 
 if df_circuit.empty:
-    st.error("⚠️️ Impossible d'extraire les données des fichiers CSV.")
+    st.error("⚠️ Impossible d'extraire les données des fichiers CSV.")
     st.stop()
 
 # ---------------------------------------------------------
 # 3. SELECTION DES JOUEURS
 # ---------------------------------------------------------
-st.sidebar.markdown("### ⚙️ Configuration du Match")
+st.sidebar.markdown("### ⚙️️ Configuration du Match")
 
 all_players = sorted(list(set(df_circuit['winner_name'].unique()).union(set(df_circuit['loser_name'].unique()))))
 
@@ -258,8 +256,10 @@ player_b = st.sidebar.selectbox("🎾 Joueur B", all_players, index=default_b_id
 surface = st.sidebar.selectbox("🌱 Surface de jeu", ["Hard", "Clay", "Grass"])
 
 # ---------------------------------------------------------
-# 4. CALCULS METRIQUES & STYLES (FILTRÉS PAR SURFACE)
+# 4. CALCULS METRIQUES & STYLES + NIVEAU DES TOURNOIS
 # ---------------------------------------------------------
+LEVEL_WEIGHTS = {'G': 2.2, 'M': 1.7, 'A': 1.2, 'C': 0.7, 'S': 0.5, 'D': 0.8}
+
 def get_player_matches(df, player_name):
     c_name = clean_name(player_name)
     wins = df[df['winner_clean'] == c_name]
@@ -309,6 +309,12 @@ def get_detailed_metrics(player, surface_match):
     if total_m == 0:
         return None
 
+    # Calcul de la qualité moyenne des victoires/tournois
+    w_levels = p_wins['tourney_level'].map(LEVEL_WEIGHTS).fillna(1.0) if len(p_wins) > 0 else pd.Series([1.0])
+    l_levels = p_losses['tourney_level'].map(LEVEL_WEIGHTS).fillna(1.0) if len(p_losses) > 0 else pd.Series([1.0])
+    
+    quality_score = (w_levels.sum() * 1.5) / (w_levels.sum() + l_levels.sum()) if (w_levels.sum() + l_levels.sum()) > 0 else 1.0
+
     overall_winrate = len(p_wins) / total_m
     all_matches = pd.concat([p_wins.assign(is_win=1), p_losses.assign(is_win=0)]).sort_values(by='tourney_date', ascending=False)
     last_10 = all_matches.head(10)
@@ -329,7 +335,7 @@ def get_detailed_metrics(player, surface_match):
     l_surf = target_matches[target_matches['is_win'] == 0]
     
     aces = pd.concat([w_surf['w_ace'], l_surf['l_ace']]).dropna()
-    dfs_count = pd.concat([w_surf['w_df'], l_surf['l_df']]).dropna()
+    dfs_count = pd.concat([w_surf['w_df'], l_surf['l_surf' if 'l_surf' in l_surf else 'l_df']]).dropna() if 'l_df' in l_surf else pd.Series([0])
     
     svpt = pd.concat([w_surf['w_svpt'], l_surf['l_svpt']]).sum()
     fst_in = pd.concat([w_surf['w_1stin'], l_surf['l_1stin']]).sum()
@@ -359,7 +365,7 @@ def get_detailed_metrics(player, surface_match):
         "player_name": player, "overall_winrate": overall_winrate, "recent_form": recent_form,
         "surface_winrate": surface_winrate, "style": player_styles_map.get(player, "Polyvalent"),
         "total_matches": total_m, "total_wins": len(p_wins), "total_losses": len(p_losses),
-        "total_surf_matches": total_surf,
+        "total_surf_matches": total_surf, "quality_score": quality_score,
         "last_10_wins": int(recent_form * len(last_10)), "titles": titles,
         "avg_aces": aces.mean() if len(aces) > 0 else 0.0,
         "avg_dfs": dfs_count.mean() if len(dfs_count) > 0 else 0.0,
@@ -377,7 +383,7 @@ if not stats_a or not stats_b:
     st.stop()
 
 # ---------------------------------------------------------
-# 5. H2H & ESTIMATION MODÈLE
+# 5. MODÈLE LOGISTIQUE ELO / BRADLEY-TERRY RÉALISTE
 # ---------------------------------------------------------
 def get_weighted_winrate_vs_style(stats_player, target_style):
     weighted_wins, weighted_total = 0.0, 0.0
@@ -403,16 +409,23 @@ h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
 h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
 total_h2h = len(h2h_matches)
 
-score_a = (stats_a['surface_winrate'] * 0.30) + (winrate_a_vs_b_style * 0.25) + (stats_a['recent_form'] * 0.25) + (stats_a['overall_winrate'] * 0.20)
-score_b = (stats_b['surface_winrate'] * 0.30) + (winrate_b_vs_a_style * 0.25) + (stats_b['recent_form'] * 0.25) + (stats_b['overall_winrate'] * 0.20)
+# Calcul du Score Elo / Force Globale réajusté avec la Qualité des tournois
+rating_a = (stats_a['surface_winrate'] * 400) + (winrate_a_vs_b_style * 300) + (stats_a['recent_form'] * 300) + (stats_a['quality_score'] * 500)
+rating_b = (stats_b['surface_winrate'] * 400) + (winrate_b_vs_a_style * 300) + (stats_b['recent_form'] * 300) + (stats_b['quality_score'] * 500)
 
-prob_est_a = (score_a * 0.80) + ((h2h_a_wins / total_h2h) * 0.20) if total_h2h > 0 else score_a
-prob_a = prob_est_a / (score_a + score_b)
+if total_h2h > 0:
+    rating_a += (h2h_a_wins - h2h_b_wins) * 60
+    rating_b += (h2h_b_wins - h2h_a_wins) * 60
+
+# Formule logistique
+prob_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 400.0))
+prob_a = min(max(prob_a, 0.03), 0.97) # Cap borné à 3%-97%
 prob_b = 1.0 - prob_a
+
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
 
 # ---------------------------------------------------------
-# 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL (CÔTE À CÔTE SUR MOBILE)
+# 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL
 # ---------------------------------------------------------
 col1, col2 = st.columns(2)
 
@@ -430,7 +443,7 @@ with col1:
     m1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
     m2.metric(f"Vs {surface}", f"{stats_a['surface_winrate']*100:.0f}%")
     m3.metric("Forme", f"{stats_a['last_10_wins']}/10")
-    m4.metric(f"Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
+    m4.metric(f"Niveau", f"{stats_a['quality_score']:.1f}x")
 
 with col2:
     st.markdown(f"""
@@ -446,7 +459,7 @@ with col2:
     m1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
     m2.metric(f"Vs {surface}", f"{stats_b['surface_winrate']*100:.0f}%")
     m3.metric("Forme", f"{stats_b['last_10_wins']}/10")
-    m4.metric(f"Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
+    m4.metric(f"Niveau", f"{stats_b['quality_score']:.1f}x")
 
 fav_surface = player_a if stats_a['surface_winrate'] >= stats_b['surface_winrate'] else player_b
 fav_form = player_a if stats_a['recent_form'] >= stats_b['recent_form'] else player_b
@@ -520,8 +533,8 @@ st.image("https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?q=80&w=12
 st.subheader("🎯 ValueBet 1N2 (+EV)")
 
 c1, c2 = st.columns(2)
-cote_a = c1.number_input(f"Cote {player_a}", value=float(round(cote_equitable_a, 2)), step=0.05)
-cote_b = c2.number_input(f"Cote {player_b}", value=float(round(cote_equitable_b, 2)), step=0.05)
+cote_a = c1.number_input(f"Cote {player_a}", value=1.25 if prob_a > 0.70 else 1.90, step=0.05)
+cote_b = c2.number_input(f"Cote {player_b}", value=1.25 if prob_b > 0.70 else 3.50, step=0.05)
 
 ev_a = (prob_a * cote_a) - 1
 ev_b = (prob_b * cote_b) - 1
@@ -587,7 +600,7 @@ prob_fav = max(prob_a, prob_b)
 fav_player_name = player_a if prob_a > prob_b else player_b
 underdog_player_name = player_b if prob_a > prob_b else player_a
 
-is_heavy_blowout = (prob_fav >= 0.72) or (abs(stats_a['surface_winrate'] - stats_b['surface_winrate']) >= 0.30)
+is_heavy_blowout = (prob_fav >= 0.75) or (abs(stats_a['quality_score'] - stats_b['quality_score']) >= 0.5)
 is_unstable_match = (stats_a['avg_dfs'] >= 4.5 or stats_b['avg_dfs'] >= 4.5) and (combined_3set_pct < 30)
 
 m1_col, m2_col = st.columns(2)
@@ -603,7 +616,7 @@ with m1_col:
         j3.metric("Tie-Break", f"{combined_tb_pct:.0f}%")
 
         if is_heavy_blowout:
-            st.error(f"🔴 **PRÉVISION UNDER 21.5 JEUX**\n\n• **Blowout :** **{fav_player_name}** ultra fav ({prob_fav*100:.0f}%). Risque de 6-3 6-2.")
+            st.error(f"🔴 **PRÉVISION UNDER 20.5 / 21.5 JEUX**\n\n• **Blowout :** **{fav_player_name}** ultra fav ({prob_fav*100:.0f}%). Risque de 6-3 6-2.")
         elif is_unstable_match:
             st.warning("⚠️ **OVER RISQUÉ / INCONSTANCE**\n\n• **Breaks fréquents :** Beaucoup de DF ({total_projected_dfs:.1f}/m).")
         elif combined_avg_games >= 23.0 or both_big_servers or combined_3set_pct >= 45:
