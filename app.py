@@ -21,115 +21,101 @@ st.set_page_config(
 # ---------------------------------------------------------
 st.markdown("""
 <style>
-    /* ---------------------------------------------------------
-       1. THÈME GLOBAL LUXE DARK
-       --------------------------------------------------------- */
+    /* THÈME GLOBAL DARK LUXE */
     .stApp {
         background-color: #0b0f19;
         color: #f1f5f9;
     }
 
-    /* ---------------------------------------------------------
-       2. TITRES DE CATÉGORIES & CARTES D'ANALYSE
-       --------------------------------------------------------- */
-    .cat-title-matchup { color: #fb7185; font-size: 1.2rem; font-weight: 700; margin-bottom: 12px; }
-    .cat-title-service { color: #38bdf8; font-size: 1.2rem; font-weight: 700; margin-top: 20px; margin-bottom: 12px; }
-    .cat-title-h2h { color: #a855f7; font-size: 1.2rem; font-weight: 700; margin-top: 20px; margin-bottom: 12px; }
-    .cat-title-valuebet { color: #f59e0b; font-size: 1.2rem; font-weight: 700; margin-top: 20px; margin-bottom: 12px; }
-    .cat-title-annexes { color: #10b981; font-size: 1.2rem; font-weight: 700; margin-top: 20px; margin-bottom: 12px; }
-
-    .analysis-box {
-        background-color: rgba(30, 41, 59, 0.6);
-        border-left: 4px solid #38bdf8;
-        padding: 10px 14px;
-        border-radius: 6px;
-        margin-top: 10px;
-        margin-bottom: 15px;
-        font-size: 0.9rem;
+    /* TITRE PRINCIPAL */
+    .main-title {
+        font-size: 2.2rem !important;
+        font-weight: 800 !important;
+        color: #ffffff !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .sub-title {
+        font-size: 0.95rem !important;
+        color: #94a3b8 !important;
+        margin-bottom: 25px !important;
     }
 
-    /* ---------------------------------------------------------
-       3. CARTES JOUEURS (DESIGN ROUGE / VERT D'ORIGINE)
-       --------------------------------------------------------- */
-    /* Joueur A - Rouge / Rose */
-    .player-card-a {
-        border: 1px solid rgba(244, 63, 94, 0.4) !important;
-        background: rgba(244, 63, 94, 0.05) !important;
+    /* TITRES DE SECTIONS */
+    .cat-title-matchup { color: #fb7185; font-size: 1.3rem; font-weight: 800; margin-bottom: 15px; }
+
+    /* CARTES DES JOUEURS (EN-TÊTE) */
+    .player-header-a {
+        border: 1.5px solid rgba(244, 63, 94, 0.5) !important;
+        background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
         border-radius: 10px !important;
-        padding: 12px !important;
-        margin-bottom: 8px !important;
-    }
-
-    .player-name-a {
-        color: #fb7185 !important;
-        font-weight: 700 !important;
-        font-size: 1.1rem !important;
-    }
-
-    .style-badge-a {
-        background-color: rgba(244, 63, 94, 0.15) !important;
-        color: #fda4af !important;
-        border: 1px solid rgba(244, 63, 94, 0.3) !important;
-        border-radius: 6px !important;
-        padding: 2px 8px !important;
-        font-size: 0.8rem !important;
-        display: inline-block !important;
-    }
-
-    /* Joueur B - Vert */
-    .player-card-b {
-        border: 1px solid rgba(16, 185, 129, 0.4) !important;
-        background: rgba(16, 185, 129, 0.05) !important;
-        border-radius: 10px !important;
-        padding: 12px !important;
-        margin-bottom: 8px !important;
-    }
-
-    .player-name-b {
-        color: #34d399 !important;
-        font-weight: 700 !important;
-        font-size: 1.1rem !important;
-    }
-
-    .style-badge-b {
-        background-color: rgba(16, 185, 129, 0.15) !important;
-        color: #a7f3d0 !important;
-        border: 1px solid rgba(16, 185, 129, 0.3) !important;
-        border-radius: 6px !important;
-        padding: 2px 8px !important;
-        font-size: 0.8rem !important;
-        display: inline-block !important;
-    }
-
-    .player-header {
+        padding: 12px 16px !important;
+        margin-bottom: 10px !important;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
 
-    /* ---------------------------------------------------------
-       4. CONTENEURS STATISTIQUES ET VALUEBET
-       --------------------------------------------------------- */
-    .card-matchup, .card-service {
-        background: rgba(15, 23, 42, 0.6);
-        border-radius: 8px;
-        padding: 8px;
+    .player-header-b {
+        border: 1.5px solid rgba(16, 185, 129, 0.5) !important;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+        border-radius: 10px !important;
+        padding: 12px 16px !important;
+        margin-bottom: 10px !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
-    .ev-card-success {
-        border: 1.5px solid #10b981 !important;
-        background: rgba(16, 185, 129, 0.1) !important;
-        border-radius: 8px !important;
-        padding: 10px !important;
+    .player-name-a { color: #fb7185 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
+    .player-name-b { color: #34d399 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
+
+    .style-badge-a {
+        background-color: rgba(244, 63, 94, 0.2) !important;
+        color: #fda4af !important;
+        border: 1px solid rgba(244, 63, 94, 0.4) !important;
+        border-radius: 6px !important;
+        padding: 3px 10px !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
     }
 
-    .ev-card-danger {
-        border: 1.5px solid #f43f5e !important;
-        background: rgba(244, 63, 94, 0.1) !important;
+    .style-badge-b {
+        background-color: rgba(16, 185, 129, 0.2) !important;
+        color: #a7f3d0 !important;
+        border: 1px solid rgba(16, 185, 129, 0.4) !important;
+        border-radius: 6px !important;
+        padding: 3px 10px !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+    }
+
+    /* STYLISATION DES BLOCS ST.METRIC / CONTAINERS */
+    div[data-testid="stMetric"] {
+        background-color: rgba(15, 23, 42, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.07) !important;
         border-radius: 8px !important;
-        padding: 10px !important;
+        padding: 10px 12px !important;
+    }
+
+    div[data-testid="stMetricValue"] {
+        font-size: 1.5rem !important;
+        font-weight: 800 !important;
+    }
+
+    .analysis-box {
+        background-color: rgba(30, 41, 59, 0.6);
+        border-left: 4px solid #38bdf8;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        font-size: 0.92rem;
     }
 </style>
+
+<div class='main-title'>🎾 Tennis ValueBet AI Pro</div>
+<div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV • ATP Circuit</div>
 """, unsafe_allow_html=True)
 
 st.markdown("<div class='main-title'>🎾 Tennis ValueBet AI Pro</div>", unsafe_allow_html=True)
@@ -498,41 +484,48 @@ st.markdown(f"<div class='cat-title-matchup'>📊 Matchup & Performance sur {sur
 col1, col2 = st.columns(2)
 
 with col1:
+    # En-tête Joueur A
     st.markdown(f"""
-    <div class='player-card-a'>
-        <div class='player-header'>
-            <div class='player-name-a'>{player_a}</div>
-            <div class='style-badge-a'>{stats_a['style']}</div>
-        </div>
+    <div class='player-header-a'>
+        <div class='player-name-a'>{player_a}</div>
+        <div class='style-badge-a'>{stats_a['style']}</div>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<div class='card-matchup'>", unsafe_allow_html=True)
-    g1, g2 = st.columns(2)
-    g1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
-    g2.metric("Vs Base", f"{stats_a['surface_winrate']*100:.0f}%")
-    g1.metric("Forme", f"{stats_a['last_10_wins']}/10")
-    g2.metric("Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
-    st.markdown("</div>", unsafe_allow_html=True)
+    # Grille de métriques dans un conteneur physique
+    with st.container():
+        g1, g2 = st.columns(2)
+        g1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
+        g2.metric("Vs Base", f"{stats_a['surface_winrate']*100:.0f}%")
+        
+        st.write("") # Espacement
+        
+        g3, g4 = st.columns(2)
+        g3.metric("Forme", f"{stats_a['last_10_wins']}/10")
+        g4.metric("Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
 
 with col2:
+    # En-tête Joueur B
     st.markdown(f"""
-    <div class='player-card-b'>
-        <div class='player-header'>
-            <div class='player-name-b'>{player_b}</div>
-            <div class='style-badge-b'>{stats_b['style']}</div>
-        </div>
+    <div class='player-header-b'>
+        <div class='player-name-b'>{player_b}</div>
+        <div class='style-badge-b'>{stats_b['style']}</div>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<div class='card-matchup'>", unsafe_allow_html=True)
-    g1, g2 = st.columns(2)
-    g1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
-    g2.metric("Vs Base", f"{stats_b['surface_winrate']*100:.0f}%")
-    g1.metric("Forme", f"{stats_b['last_10_wins']}/10")
-    g2.metric("Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
-    st.markdown("</div>", unsafe_allow_html=True)
+    # Grille de métriques dans un conteneur physique
+    with st.container():
+        g1, g2 = st.columns(2)
+        g1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
+        g2.metric("Vs Base", f"{stats_b['surface_winrate']*100:.0f}%")
+        
+        st.write("") # Espacement
+        
+        g3, g4 = st.columns(2)
+        g3.metric("Forme", f"{stats_b['last_10_wins']}/10")
+        g4.metric("Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
 
+# Box d'analyse sous les cartes
 fav_surface = player_a if stats_a['surface_winrate'] >= stats_b['surface_winrate'] else player_b
 fav_style = player_a if winrate_a_vs_b_style >= winrate_b_vs_a_style else player_b
 
