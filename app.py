@@ -423,6 +423,35 @@ if not stats_a or not stats_b:
 # ---------------------------------------------------------
 # 7. CALCUL PROPRE DES RATINGS & PROBABILITÉS (ALIGNEMENT FIXE)
 # ---------------------------------------------------------
+
+# ---------------------------------------------------------
+# FONCTION REQUISTE : CALCUL WINRATE VS STYLE ADVERSE
+# ---------------------------------------------------------
+def get_weighted_winrate_vs_style(stats_player, target_style):
+    weighted_wins, weighted_total = 0.0, 0.0
+    
+    # Prise en compte des victoires face aux adversaires du même style
+    if 'loser_name' in stats_player['p_wins'].columns:
+        for opp in stats_player['p_wins']['loser_name']:
+            opp_style = player_styles_map.get(opp, "Polyvalent")
+            sim_score = STYLE_SIMILARITY.get(target_style, {}).get(opp_style, 0.3)
+            weighted_wins += 1.0 * sim_score
+            weighted_total += 1.0 * sim_score
+
+    # Prise en compte des défaites face aux adversaires du même style
+    if 'winner_name' in stats_player['p_losses'].columns:
+        for opp in stats_player['p_losses']['winner_name']:
+            opp_style = player_styles_map.get(opp, "Polyvalent")
+            sim_score = STYLE_SIMILARITY.get(target_style, {}).get(opp_style, 0.3)
+            weighted_total += 1.0 * sim_score
+
+    return (weighted_wins / weighted_total) if weighted_total >= 1.0 else stats_player['overall_winrate']
+
+
+# ---------------------------------------------------------
+# CALCULS RATINGS ET PROBABILITÉS
+# ---------------------------------------------------------
+
 # 1. Calcul du matchup vs style adverse
 winrate_a_vs_b_style = get_weighted_winrate_vs_style(stats_a, stats_b['style'])
 winrate_b_vs_a_style = get_weighted_winrate_vs_style(stats_b, stats_a['style'])
