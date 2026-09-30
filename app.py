@@ -404,8 +404,9 @@ stats_b = get_detailed_metrics(player_b, surface)
 if not stats_a or not stats_b:
     st.warning("Données insuffisantes pour l'un des joueurs.")
     st.stop()
+
 # ---------------------------------------------------------
-# 5. MODÈLE ELO & WINRATE SURFACE PRIORITAIRE
+# 5. MODÈLE ELO & MATCHUP TACTIQUE (VS STYLE INCLUS)
 # ---------------------------------------------------------
 def get_weighted_winrate_vs_style(stats_player, target_style):
     weighted_wins, weighted_total = 0.0, 0.0
@@ -431,21 +432,35 @@ h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
 h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
 total_h2h = len(h2h_matches)
 
-# Priorité forte sur le Winrate Surface (400 pts) et la qualité du circuit (200 pts)
-rating_a = (stats_a['surface_winrate'] * 400) + (stats_a['overall_winrate'] * 150) + (winrate_a_vs_b_style * 150) + (stats_a['recent_form'] * 150) + (stats_a['quality_score'] * 200)
-rating_b = (stats_b['surface_winrate'] * 400) + (stats_b['overall_winrate'] * 150) + (winrate_b_vs_a_style * 150) + (stats_b['recent_form'] * 150) + (stats_b['quality_score'] * 200)
+# RATING GLOBAL : Incorpore fortement la Surface (350 pts) ET le Matchup vs Style (250 pts)
+rating_a = (
+    (stats_a['surface_winrate'] * 350) + 
+    (winrate_a_vs_b_style * 250) + 
+    (stats_a['overall_winrate'] * 100) + 
+    (stats_a['recent_form'] * 150) + 
+    (stats_a['quality_score'] * 150)
+)
 
-# Impact H2H
+rating_b = (
+    (stats_b['surface_winrate'] * 350) + 
+    (winrate_b_vs_a_style * 250) + 
+    (stats_b['overall_winrate'] * 100) + 
+    (stats_b['recent_form'] * 150) + 
+    (stats_b['quality_score'] * 150)
+)
+
+# Ajustement selon l'historique H2H
 if total_h2h > 0:
     rating_a += (h2h_a_wins - h2h_b_wins) * 30
     rating_b += (h2h_b_wins - h2h_a_wins) * 30
 
-# Modèle Logistique réaligné (Ecart dividende 500 pour une sensibilité optimale)
+# Calcul de la probabilité logistique (Diviseur 500 pour garder une distribution réaliste)
 prob_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 500.0))
 prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
+
 # ---------------------------------------------------------
 # 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL
 # ---------------------------------------------------------
@@ -465,7 +480,7 @@ with col1:
     m1.metric("Win Global", f"{stats_a['overall_winrate']*100:.0f}%")
     m2.metric(f"Vs {surface}", f"{stats_a['surface_winrate']*100:.0f}%")
     m3.metric("Forme", f"{stats_a['last_10_wins']}/10")
-    m4.metric(f"Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
+    m4.metric("Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
 
 with col2:
     st.markdown(f"""
@@ -481,13 +496,13 @@ with col2:
     m1.metric("Win Global", f"{stats_b['overall_winrate']*100:.0f}%")
     m2.metric(f"Vs {surface}", f"{stats_b['surface_winrate']*100:.0f}%")
     m3.metric("Forme", f"{stats_b['last_10_wins']}/10")
-    m4.metric(f"Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
+    m4.metric("Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
 
 fav_surface = player_a if stats_a['surface_winrate'] >= stats_b['surface_winrate'] else player_b
 fav_style = player_a if winrate_a_vs_b_style >= winrate_b_vs_a_style else player_b
 st.markdown(f"""
 <div class='analysis-box'>
-    💡 <b>Surface & Matchup :</b> Avantage <b>{fav_surface}</b> sur {surface} ({max(stats_a['surface_winrate'], stats_b['surface_winrate'])*100:.0f}% V). Meilleur historique vs le style adverse : <b>{fav_style}</b>.
+    💡 <b>Surface & Matchup :</b> Avantage <b>{fav_surface}</b> sur {surface} ({max(stats_a['surface_winrate'], stats_b['surface_winrate'])*100:.0f}% V). Meilleur bilan vs le style adverse : <b>{fav_style}</b> ({max(winrate_a_vs_b_style, winrate_b_vs_a_style)*100:.0f}% V).
 </div>
 """, unsafe_allow_html=True)
 
