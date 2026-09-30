@@ -686,7 +686,7 @@ with m2_col:
         else:
             st.info("🔵 **MARGE FAIBLE / NO BET**")
 
-    # 4. HANDICAP SETS
+   # 4. HANDICAP SETS
     with st.container(border=True):
         st.markdown("#### 🛡️ Handicap Sets")
         
@@ -698,6 +698,3 @@ with m2_col:
             st.success(f"🛡️ **SAFE : {underdog_player_name} +1.5 Sets**")
         else:
             st.info(f"🔵 **MARGE FAIBLE / Victoire sèche** sur {fav_player_name}")
-            st.success(f"🛡️ **SAFE : {underdog_player_name} à +1.5 Sets**")
-        else:
-            st.info(f"🔵 **Victoire sèche** sur {fav_player_name}")
