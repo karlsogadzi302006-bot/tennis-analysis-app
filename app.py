@@ -17,53 +17,64 @@ st.set_page_config(
 # 2. Styles CSS (Maintenant 'st' est bien défini)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
+
+    /* FOND SOMBRE LUXE AVEC MOTIF DISCRET (RADIAL PATTERN) */
     .stApp {
-        background: #0d1117;
-        color: #f3f4f6;
+        background-color: #080a0f;
+        background-image: 
+            radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.25) 0%, transparent 75%),
+            radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
+        background-size: 100% 100%, 24px 24px;
+        color: #f8fafc;
     }
     
-    /* En-tête principal */
+    /* En-tête principal raffiné */
     .main-title {
         font-size: 1.7rem !important;
         font-weight: 800 !important;
-        background: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6);
+        background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 50%, #c084fc 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 2px;
+        letter-spacing: -0.5px;
     }
     .sub-title {
-        color: #9ca3af;
-        font-size: 0.85rem !important;
-        margin-bottom: 16px;
+        color: #64748b;
+        font-size: 0.82rem !important;
+        margin-bottom: 20px;
+        font-weight: 500;
     }
 
-    /* Titres de sections */
+    /* Titres de sections minimalistes & élégants */
     h2, h3, .stHeader {
-        font-size: 1.25rem !important;
-        font-weight: 800 !important;
-        color: #f9fafb !important;
-        margin-top: 20px !important;
+        font-size: 1.2rem !important;
+        font-weight: 700 !important;
+        color: #f1f5f9 !important;
+        margin-top: 24px !important;
         margin-bottom: 12px !important;
-        border-bottom: 1px solid #1f2937;
-        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding-bottom: 8px;
+        letter-spacing: -0.3px;
     }
 
-    /* Cartes Joueurs - Distinguées par couleur */
+    /* Cartes Joueurs - Finition Titanium Rose Gold & Platinum Emerald */
     .player-card-a {
-        background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
-        border: 1px solid #6366f1;
+        background: linear-gradient(145deg, rgba(225, 29, 72, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(244, 63, 94, 0.35);
+        box-shadow: 0 4px 20px rgba(244, 63, 94, 0.05);
         border-radius: 12px;
         padding: 10px 14px;
         margin-bottom: 10px;
     }
     .player-card-b {
-        background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%);
-        border: 1px solid #10b981;
+        background: linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.05);
         border-radius: 12px;
         padding: 10px 14px;
         margin-bottom: 10px;
@@ -74,81 +85,85 @@ st.markdown("""
         align-items: center;
     }
     .player-name-a {
-        font-size: 1.15rem !important;
+        font-size: 1.1rem !important;
         font-weight: 800 !important;
-        color: #c084fc;
+        color: #fb7185;
     }
     .player-name-b {
-        font-size: 1.15rem !important;
+        font-size: 1.1rem !important;
         font-weight: 800 !important;
         color: #34d399;
     }
     .style-badge-a {
-        background: rgba(168, 85, 247, 0.2);
-        color: #e9d5ff;
-        border: 1px solid rgba(168, 85, 247, 0.4);
-        padding: 4px 8px;
+        background: rgba(244, 63, 94, 0.12);
+        color: #fecdd3;
+        border: 1px solid rgba(244, 63, 94, 0.3);
+        padding: 3px 8px;
         border-radius: 6px;
-        font-size: 0.72rem !important;
+        font-size: 0.7rem !important;
         font-weight: 700;
+        letter-spacing: 0.3px;
     }
     .style-badge-b {
-        background: rgba(16, 185, 129, 0.2);
+        background: rgba(16, 185, 129, 0.12);
         color: #a7f3d0;
-        border: 1px solid rgba(16, 185, 129, 0.4);
-        padding: 4px 8px;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 3px 8px;
         border-radius: 6px;
-        font-size: 0.72rem !important;
+        font-size: 0.7rem !important;
         font-weight: 700;
+        letter-spacing: 0.3px;
     }
 
-    /* Métriques dynamiques */
+    /* Métriques sombres mates avec valeurs Doré Champagne */
     [data-testid="stMetric"] {
-        background: #161e2e !important;
-        border: 1px solid #283548 !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.07) !important;
         border-radius: 10px !important;
         padding: 8px 6px !important;
         text-align: center !important;
         margin-bottom: 6px !important;
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.03);
     }
     [data-testid="stMetricValue"] {
-        font-size: 1.2rem !important;
+        font-size: 1.15rem !important;
         font-weight: 800 !important;
-        color: #f59e0b !important; /* Orange Néon pour faire ressortir les nombres */
+        color: #fbbf24 !important; /* Doré Champagne Premium */
         line-height: 1.2 !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 0.75rem !important;
+        font-size: 0.73rem !important;
         font-weight: 600 !important;
-        color: #9ca3af !important;
+        color: #94a3b8 !important;
         white-space: normal !important;
         word-break: break-word !important;
     }
 
-    /* Boîtes d'analyse */
+    /* Boîtes d'analyse au style feutré */
     .analysis-box {
-        background: rgba(31, 41, 55, 0.7);
-        border-left: 4px solid #f59e0b;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(251, 191, 36, 0.25);
+        border-left: 4px solid #fbbf24;
         border-radius: 8px;
         padding: 12px;
         margin-top: 8px;
         margin-bottom: 16px;
-        font-size: 0.88rem !important;
+        font-size: 0.85rem !important;
         line-height: 1.4 !important;
-        color: #f3f4f6;
+        color: #e2e8f0;
     }
 
-    /* ValueBet Cards */
+    /* ValueBet Cards Sobres & Efficaces */
     .ev-card-success {
-        background: rgba(16, 185, 129, 0.12);
-        border: 1px solid #10b981;
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.35);
         border-radius: 10px;
         padding: 12px;
         margin-bottom: 10px;
     }
     .ev-card-danger {
-        background: rgba(239, 68, 68, 0.12);
-        border: 1px solid #ef4444;
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.3);
         border-radius: 10px;
         padding: 12px;
         margin-bottom: 10px;
@@ -453,6 +468,7 @@ prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
+
 # ---------------------------------------------------------
 # 6. AFFICHAGE : CARTES COMPARATIVES ET DUEL
 # ---------------------------------------------------------
@@ -497,6 +513,7 @@ st.markdown(f"""
     💡 <b>Surface & Matchup :</b> Avantage <b>{fav_surface}</b> sur {surface} ({max(stats_a['surface_winrate'], stats_b['surface_winrate'])*100:.0f}% V). Meilleur bilan vs le style adverse : <b>{fav_style}</b> ({max(winrate_a_vs_b_style, winrate_b_vs_a_style)*100:.0f}% V).
 </div>
 """, unsafe_allow_html=True)
+
 
 # ---------------------------------------------------------
 # 7. SERVICE & ENGAGEMENT (STRUCTURÉ PAR JOUEUR)
