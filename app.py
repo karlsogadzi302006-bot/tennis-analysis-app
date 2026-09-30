@@ -21,109 +21,113 @@ st.set_page_config(
 # ---------------------------------------------------------
 st.markdown("""
 <style>
-    /* THEME GLOBAL LUXE DARK */
+    /* ---------------------------------------------------------
+       1. THÈME GLOBAL LUXE DARK
+       --------------------------------------------------------- */
     .stApp {
         background-color: #0b0f19;
         color: #f1f5f9;
     }
 
-    /* CONTENEUR JOUEUR A (GLOW VIOLET NEON) */
-    .player-card-purple {
-        border: 1.5px solid #a855f7 !important;
-        background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
-        box-shadow: 0 0 15px rgba(168, 85, 247, 0.3), inset 0 0 10px rgba(168, 85, 247, 0.15) !important;
-        border-radius: 12px !important;
-        padding: 14px !important;
-        margin-bottom: 12px !important;
+    /* ---------------------------------------------------------
+       2. TITRES DE CATÉGORIES & CARTES D'ANALYSE
+       --------------------------------------------------------- */
+    .cat-title-matchup { color: #fb7185; font-size: 1.2rem; font-weight: 700; margin-bottom: 12px; }
+    .cat-title-service { color: #38bdf8; font-size: 1.2rem; font-weight: 700; margin-top: 20px; margin-bottom: 12px; }
+    .cat-title-h2h { color: #a855f7; font-size: 1.2rem; font-weight: 700; margin-top: 20px; margin-bottom: 12px; }
+    .cat-title-valuebet { color: #f59e0b; font-size: 1.2rem; font-weight: 700; margin-top: 20px; margin-bottom: 12px; }
+    .cat-title-annexes { color: #10b981; font-size: 1.2rem; font-weight: 700; margin-top: 20px; margin-bottom: 12px; }
+
+    .analysis-box {
+        background-color: rgba(30, 41, 59, 0.6);
+        border-left: 4px solid #38bdf8;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-top: 10px;
+        margin-bottom: 15px;
+        font-size: 0.9rem;
     }
 
-    .player-card-purple h3 {
-        color: #c084fc !important;
-        text-shadow: 0 0 8px rgba(192, 132, 252, 0.5) !important;
-        font-weight: 700 !important;
-        margin: 0 !important;
-    }
-
-    .style-badge-purple {
-        background-color: rgba(168, 85, 247, 0.2) !important;
-        color: #e9d5ff !important;
-        border: 1px solid rgba(168, 85, 247, 0.4) !important;
-        border-radius: 6px !important;
-        padding: 3px 10px !important;
-        font-size: 0.82rem !important;
-        font-weight: 600 !important;
-        display: inline-block !important;
-        margin-top: 6px !important;
-    }
-
-    /* CONTENEUR JOUEUR B (GLOW VERT NEON) */
-    .player-card-green {
-        border: 1.5px solid #10b981 !important;
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.3), inset 0 0 10px rgba(16, 185, 129, 0.15) !important;
-        border-radius: 12px !important;
-        padding: 14px !important;
-        margin-bottom: 12px !important;
-    }
-
-    .player-card-green h3 {
-        color: #34d399 !important;
-        text-shadow: 0 0 8px rgba(52, 211, 153, 0.5) !important;
-        font-weight: 700 !important;
-        margin: 0 !important;
-    }
-
-    .style-badge-green {
-        background-color: rgba(16, 185, 129, 0.2) !important;
-        color: #a7f3d0 !important;
-        border: 1px solid rgba(16, 185, 129, 0.4) !important;
-        border-radius: 6px !important;
-        padding: 3px 10px !important;
-        font-size: 0.82rem !important;
-        font-weight: 600 !important;
-        display: inline-block !important;
-        margin-top: 6px !important;
-    }
-
-    /* CARTES METRIQUES */
-    div[data-testid="stMetricValue"] {
-        font-size: 1.35rem !important;
-        font-weight: 800 !important;
-        color: #f8fafc !important;
-    }
-
-    div[data-testid="metric-container"] {
-        background: rgba(30, 41, 59, 0.7) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    /* ---------------------------------------------------------
+       3. CARTES JOUEURS (DESIGN ROUGE / VERT D'ORIGINE)
+       --------------------------------------------------------- */
+    /* Joueur A - Rouge / Rose */
+    .player-card-a {
+        border: 1px solid rgba(244, 63, 94, 0.4) !important;
+        background: rgba(244, 63, 94, 0.05) !important;
         border-radius: 10px !important;
-        padding: 10px 14px !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+        padding: 12px !important;
+        margin-bottom: 8px !important;
     }
 
-    /* SECTION VALUEBET (+EV) */
-    .cat-title-valuebet {
-        color: #c084fc !important;
-        font-size: 1.25rem !important;
+    .player-name-a {
+        color: #fb7185 !important;
         font-weight: 700 !important;
-        margin-top: 20px !important;
-        margin-bottom: 12px !important;
-        text-transform: uppercase !important;
+        font-size: 1.1rem !important;
+    }
+
+    .style-badge-a {
+        background-color: rgba(244, 63, 94, 0.15) !important;
+        color: #fda4af !important;
+        border: 1px solid rgba(244, 63, 94, 0.3) !important;
+        border-radius: 6px !important;
+        padding: 2px 8px !important;
+        font-size: 0.8rem !important;
+        display: inline-block !important;
+    }
+
+    /* Joueur B - Vert */
+    .player-card-b {
+        border: 1px solid rgba(16, 185, 129, 0.4) !important;
+        background: rgba(16, 185, 129, 0.05) !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .player-name-b {
+        color: #34d399 !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+    }
+
+    .style-badge-b {
+        background-color: rgba(16, 185, 129, 0.15) !important;
+        color: #a7f3d0 !important;
+        border: 1px solid rgba(16, 185, 129, 0.3) !important;
+        border-radius: 6px !important;
+        padding: 2px 8px !important;
+        font-size: 0.8rem !important;
+        display: inline-block !important;
+    }
+
+    .player-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* ---------------------------------------------------------
+       4. CONTENEURS STATISTIQUES ET VALUEBET
+       --------------------------------------------------------- */
+    .card-matchup, .card-service {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 8px;
+        padding: 8px;
     }
 
     .ev-card-success {
         border: 1.5px solid #10b981 !important;
         background: rgba(16, 185, 129, 0.1) !important;
-        box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
-        border-radius: 10px !important;
-        padding: 12px !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
     }
 
     .ev-card-danger {
-        border: 1.5px solid #a855f7 !important;
-        background: rgba(168, 85, 247, 0.1) !important;
-        box-shadow: 0 0 12px rgba(168, 85, 247, 0.2) !important;
-        border-radius: 10px !important;
-        padding: 12px !important;
+        border: 1.5px solid #f43f5e !important;
+        background: rgba(244, 63, 94, 0.1) !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -489,20 +493,16 @@ cote_equitable_b = 1.0 / prob_b
 # ---------------------------------------------------------
 # 8. AFFICHAGE DES CATEGORIES
 # ---------------------------------------------------------
-# ---------------------------------------------------------
-# 8. AFFICHAGE DES CATEGORIES
-# ---------------------------------------------------------
 st.markdown(f"<div class='cat-title-matchup'>📊 Matchup & Performance sur {surface}</div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
 with col1:
-    # --- CARTE JOUEUR A (GLOW VIOLET) ---
     st.markdown(f"""
-    <div class='player-card-purple'>
+    <div class='player-card-a'>
         <div class='player-header'>
-            <h3>{player_a}</h3>
-            <div class='style-badge-purple'>{stats_a['style']}</div>
+            <div class='player-name-a'>{player_a}</div>
+            <div class='style-badge-a'>{stats_a['style']}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -516,12 +516,11 @@ with col1:
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col2:
-    # --- CARTE JOUEUR B (GLOW VERT) ---
     st.markdown(f"""
-    <div class='player-card-green'>
+    <div class='player-card-b'>
         <div class='player-header'>
-            <h3>{player_b}</h3>
-            <div class='style-badge-green'>{stats_b['style']}</div>
+            <div class='player-name-b'>{player_b}</div>
+            <div class='style-badge-b'>{stats_b['style']}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
