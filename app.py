@@ -404,9 +404,8 @@ stats_b = get_detailed_metrics(player_b, surface)
 if not stats_a or not stats_b:
     st.warning("Données insuffisantes pour l'un des joueurs.")
     st.stop()
-
 # ---------------------------------------------------------
-# 5. MODÈLE LOGISTIQUE ELO ÉQUILIBRÉ (SANS SURÉVALUATION)
+# 5. MODÈLE ELO & WINRATE SURFACE PRIORITAIRE
 # ---------------------------------------------------------
 def get_weighted_winrate_vs_style(stats_player, target_style):
     weighted_wins, weighted_total = 0.0, 0.0
@@ -432,16 +431,17 @@ h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
 h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
 total_h2h = len(h2h_matches)
 
-# Calcul lissé pour éviter les écarts absurdes
-rating_a = (stats_a['surface_winrate'] * 250) + (winrate_a_vs_b_style * 150) + (stats_a['recent_form'] * 200) + (stats_a['quality_score'] * 150)
-rating_b = (stats_b['surface_winrate'] * 250) + (winrate_b_vs_a_style * 150) + (stats_b['recent_form'] * 200) + (stats_b['quality_score'] * 150)
+# Priorité forte sur le Winrate Surface (400 pts) et la qualité du circuit (200 pts)
+rating_a = (stats_a['surface_winrate'] * 400) + (stats_a['overall_winrate'] * 150) + (winrate_a_vs_b_style * 150) + (stats_a['recent_form'] * 150) + (stats_a['quality_score'] * 200)
+rating_b = (stats_b['surface_winrate'] * 400) + (stats_b['overall_winrate'] * 150) + (winrate_b_vs_a_style * 150) + (stats_b['recent_form'] * 150) + (stats_b['quality_score'] * 200)
 
+# Impact H2H
 if total_h2h > 0:
-    rating_a += (h2h_a_wins - h2h_b_wins) * 25
-    rating_b += (h2h_b_wins - h2h_a_wins) * 25
+    rating_a += (h2h_a_wins - h2h_b_wins) * 30
+    rating_b += (h2h_b_wins - h2h_a_wins) * 30
 
-# Division par 800 pour resserrer la courbe de probabilité
-prob_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 800.0))
+# Modèle Logistique réaligné (Ecart dividende 500 pour une sensibilité optimale)
+prob_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 500.0))
 prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
