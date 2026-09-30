@@ -421,48 +421,63 @@ if not stats_a or not stats_b:
     st.stop()
 
 # ---------------------------------------------------------
-# 7. CALCUL DES RATINGS & PROBABILITÉS (HIÉRARCHIE STRICTE)
+# 7. CALCUL SELON LA HIÉRARCHIE DES 5 PILIERS ANALYTIQUES
 # ---------------------------------------------------------
+
+# --- PILIER 1 : SURFACE & CONDITIONS (Vitesse court & Stats réelles) ---
+serve_adj_a = (stats_a['pct_1st_won'] / 100.0) * stats_a['serve_weight']
+serve_adj_b = (stats_b['pct_1st_won'] / 100.0) * stats_b['serve_weight']
+
+p1_surface_a = (stats_a['surface_winrate'] * 400.0) + (serve_adj_a * 80.0)
+p1_surface_b = (stats_b['surface_winrate'] * 400.0) + (serve_adj_b * 80.0)
+
+# --- PILIER 2 : FORME RÉCENTE & CHARGE PHYSIQUE (10 à 15 derniers matchs) ---
+p2_forme_a = stats_a['recent_form'] * 250.0
+p2_forme_b = stats_b['recent_form'] * 250.0
+
+# --- PILIER 3 : MATCH-UP TACTIQUE (Styles de jeu croisés) ---
 winrate_a_vs_b_style = get_weighted_winrate_vs_style(stats_a, stats_b['style'])
 winrate_b_vs_a_style = get_weighted_winrate_vs_style(stats_b, stats_a['style'])
 
+p3_matchup_a = winrate_a_vs_b_style * 200.0
+p3_matchup_b = winrate_b_vs_a_style * 200.0
+
+# --- PILIER 4 : H2H & MENTAL (Duels sur surface similaire) ---
 clean_a, clean_b = clean_name(player_a), clean_name(player_b)
 h2h_matches = df_circuit[
     ((df_circuit['winner_clean'] == clean_a) & (df_circuit['loser_clean'] == clean_b)) |
     ((df_circuit['winner_clean'] == clean_b) & (df_circuit['loser_clean'] == clean_a))
 ].copy()
 
-h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
-h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
-total_h2h = len(h2h_matches)
+# Filtrage prioritaire sur la même base de surface (Hard, Clay, Grass)
+s_config = SURFACE_FACTORS.get(surface, {"base_surface": "Hard"})
+base_surf = s_config["base_surface"]
+h2h_surface = h2h_matches[h2h_matches['surface'] == base_surf]
 
-serve_adj_a = (stats_a['pct_1st_won'] / 100.0) * stats_a['serve_weight']
-serve_adj_b = (stats_b['pct_1st_won'] / 100.0) * stats_b['serve_weight']
+if len(h2h_surface) > 0:
+    h2h_a_wins = len(h2h_surface[h2h_surface['winner_clean'] == clean_a])
+    h2h_b_wins = len(h2h_surface[h2h_surface['winner_clean'] == clean_b])
+    total_h2h = len(h2h_surface)
+else:
+    h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
+    h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
+    total_h2h = len(h2h_matches)
 
-# CALCUL DES RATINGS AVEC NOUVELLE HIÉRARCHIE
-rating_a = (
-    (stats_a['surface_winrate'] * 400.0) +     # 1. Surface (Priorité absolue)
-    (winrate_a_vs_b_style * 350.0) +          # 2. Matchup vs Style
-    (stats_a['recent_form'] * 150.0) +        # 3. Forme récente
-    (serve_adj_a * 100.0)                     # 4. Service / Vitesse surface
-)
+p4_mental_a = 0.0
+p4_mental_b = 0.0
 
-rating_b = (
-    (stats_b['surface_winrate'] * 400.0) + 
-    (winrate_b_vs_a_style * 350.0) + 
-    (stats_b['recent_form'] * 150.0) + 
-    (serve_adj_b * 100.0)
-)
-
-# Ajustement H2H très léger (plafonné pour ne pas détruire le matchup)
 if total_h2h > 0:
     h2h_diff = np.clip(h2h_a_wins - h2h_b_wins, -2, 2)
-    rating_a += h2h_diff * 15.0
-    rating_b -= h2h_diff * 15.0
+    p4_mental_a = h2h_diff * 25.0
+    p4_mental_b = -h2h_diff * 25.0
 
-# Formule logistique
+# --- SYNTHÈSE DES RATINGS ---
+rating_a = p1_surface_a + p2_forme_a + p3_matchup_a + p4_mental_a
+rating_b = p1_surface_b + p2_forme_b + p3_matchup_b + p4_mental_b
+
+# --- PILIER 5 : CALCUL DE VALUE (MATHS / PROBABILITÉS) ---
 delta_rating = rating_a - rating_b
-prob_a = 1.0 / (1.0 + 10.0 ** (-delta_rating / 350.0))
+prob_a = 1.0 / (1.0 + 10.0 ** (-delta_rating / 380.0))
 prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
