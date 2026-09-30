@@ -280,9 +280,9 @@ player_b = st.sidebar.selectbox("🎾 Joueur B", all_players, index=default_b_id
 surface = st.sidebar.selectbox("🌱 Surface de jeu", ["Hard", "Clay", "Grass"])
 
 # ---------------------------------------------------------
-# 4. CALCULS METRIQUES & STYLES
+# 4. CALCULS METRIQUES & STYLES + PONDÉRATION ADAPTÉE
 # ---------------------------------------------------------
-LEVEL_WEIGHTS = {'G': 2.2, 'M': 1.7, 'A': 1.2, 'C': 0.7, 'S': 0.5, 'D': 0.8}
+LEVEL_WEIGHTS = {'G': 1.4, 'M': 1.25, 'A': 1.1, 'C': 0.9, 'S': 0.8, 'D': 0.7}
 
 def get_player_matches(df, player_name):
     c_name = clean_name(player_name)
@@ -336,7 +336,7 @@ def get_detailed_metrics(player, surface_match):
     w_levels = p_wins['tourney_level'].map(LEVEL_WEIGHTS).fillna(1.0) if len(p_wins) > 0 else pd.Series([1.0])
     l_levels = p_losses['tourney_level'].map(LEVEL_WEIGHTS).fillna(1.0) if len(p_losses) > 0 else pd.Series([1.0])
     
-    quality_score = (w_levels.sum() * 1.5) / (w_levels.sum() + l_levels.sum()) if (w_levels.sum() + l_levels.sum()) > 0 else 1.0
+    quality_score = (w_levels.sum() * 1.1) / (w_levels.sum() + l_levels.sum()) if (w_levels.sum() + l_levels.sum()) > 0 else 1.0
 
     overall_winrate = len(p_wins) / total_m
     all_matches = pd.concat([p_wins.assign(is_win=1), p_losses.assign(is_win=0)]).sort_values(by='tourney_date', ascending=False)
@@ -406,7 +406,7 @@ if not stats_a or not stats_b:
     st.stop()
 
 # ---------------------------------------------------------
-# 5. MODÈLE LOGISTIQUE ELO / BRADLEY-TERRY
+# 5. MODÈLE LOGISTIQUE ELO ÉQUILIBRÉ (SANS SURÉVALUATION)
 # ---------------------------------------------------------
 def get_weighted_winrate_vs_style(stats_player, target_style):
     weighted_wins, weighted_total = 0.0, 0.0
@@ -432,15 +432,17 @@ h2h_a_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_a])
 h2h_b_wins = len(h2h_matches[h2h_matches['winner_clean'] == clean_b])
 total_h2h = len(h2h_matches)
 
-rating_a = (stats_a['surface_winrate'] * 400) + (winrate_a_vs_b_style * 300) + (stats_a['recent_form'] * 300) + (stats_a['quality_score'] * 500)
-rating_b = (stats_b['surface_winrate'] * 400) + (winrate_b_vs_a_style * 300) + (stats_b['recent_form'] * 300) + (stats_b['quality_score'] * 500)
+# Calcul lissé pour éviter les écarts absurdes
+rating_a = (stats_a['surface_winrate'] * 250) + (winrate_a_vs_b_style * 150) + (stats_a['recent_form'] * 200) + (stats_a['quality_score'] * 150)
+rating_b = (stats_b['surface_winrate'] * 250) + (winrate_b_vs_a_style * 150) + (stats_b['recent_form'] * 200) + (stats_b['quality_score'] * 150)
 
 if total_h2h > 0:
-    rating_a += (h2h_a_wins - h2h_b_wins) * 60
-    rating_b += (h2h_b_wins - h2h_a_wins) * 60
+    rating_a += (h2h_a_wins - h2h_b_wins) * 25
+    rating_b += (h2h_b_wins - h2h_a_wins) * 25
 
-prob_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 400.0))
-prob_a = min(max(prob_a, 0.03), 0.97)
+# Division par 800 pour resserrer la courbe de probabilité
+prob_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 800.0))
+prob_a = min(max(prob_a, 0.05), 0.95)
 prob_b = 1.0 - prob_a
 
 cote_equitable_a, cote_equitable_b = 1 / prob_a, 1 / prob_b
@@ -490,9 +492,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# BANNIÈRE 1
-st.image("https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
-
 # ---------------------------------------------------------
 # 7. METRIQUES COMPACTES STYLE DE JEU
 # ---------------------------------------------------------
@@ -520,9 +519,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# BANNIÈRE 2
-st.image("https://images.unsplash.com/photo-1560012057-4372e14c5085?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
-
 # ---------------------------------------------------------
 # 8. CONFRONTATIONS DIRECTES (H2H)
 # ---------------------------------------------------------
@@ -544,9 +540,6 @@ if total_h2h > 0:
         )
 else:
     st.write("Aucune confrontation directe enregistrée.")
-
-# BANNIÈRE 3
-st.image("https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
 # 9. DETECTEUR +EV ET CALCULATEUR VALUEBET
@@ -598,9 +591,6 @@ with r2:
         st.success(f"🟢 **VALUE BET SUR {player_b}** (+{ev_b*100:.1f}% EV)")
     else:
         st.error("🔴 **Cote trop basse**")
-
-# BANNIÈRE 4
-st.image("https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
 
 # ---------------------------------------------------------
 # 10. ANALYSE AFFINÉE DES MARCHÉS ANNEXES
