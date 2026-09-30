@@ -21,142 +21,128 @@ st.set_page_config(
 # ---------------------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    /* FOND LUXE SOMBRE AVEC MOTIF DISCRET */
+    /* ---------------------------------------------------------
+       1. THEME GLOBAL "LUXE DARK" & SURFACES
+       --------------------------------------------------------- */
     .stApp {
-        background-color: #07090e;
-        background-image: 
-            radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.3) 0%, transparent 70%),
-            radial-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 0);
-        background-size: 100% 100%, 20px 20px;
-        color: #f8fafc;
-    }
-    
-    /* EN-TÊTE PRINCIPAL */
-    .main-title {
-        font-size: 1.7rem !important;
-        font-weight: 800 !important;
-        background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 50%, #c084fc 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 2px;
-    }
-    .sub-title {
-        color: #64748b;
-        font-size: 0.82rem !important;
-        margin-bottom: 20px;
-        font-weight: 500;
+        background-color: #0b0f19;
+        color: #f1f5f9;
     }
 
-    /* TITRES DE CATÉGORIES PERSONNALISÉS PAR COULEUR */
-    .cat-title-matchup {
-        color: #fb7185 !important;
-        font-size: 1.25rem; font-weight: 800; margin-top: 18px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(251, 113, 133, 0.4); padding-bottom: 4px;
+    /* ---------------------------------------------------------
+       2. CONTENEURS JOUEURS (GLOW VIOLET NEON & GLOW VERT)
+       --------------------------------------------------------- */
+    /* Carte Joueur / Outsider / Conteneur Violet */
+    .player-card-purple, .player-card-outsider, .player-card-red {
+        border: 1.5px solid #a855f7 !important;
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.3), inset 0 0 10px rgba(168, 85, 247, 0.15) !important;
+        border-radius: 12px !important;
+        padding: 14px !important;
+        margin-bottom: 12px !important;
     }
-    .cat-title-service {
-        color: #38bdf8 !important;
-        font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(56, 189, 248, 0.4); padding-bottom: 4px;
-    }
-    .cat-title-h2h {
+
+    /* Titre du joueur en violet néon */
+    .player-card-purple h3, .player-card-outsider h3, .player-card-red h3, .player-title-purple {
         color: #c084fc !important;
-        font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(192, 132, 252, 0.4); padding-bottom: 4px;
+        text-shadow: 0 0 8px rgba(192, 132, 252, 0.5) !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
     }
-    .cat-title-valuebet {
-        color: #f59e0b !important;
-        font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(245, 158, 11, 0.4); padding-bottom: 4px;
+
+    /* Badge de style en violet */
+    .style-badge-purple {
+        background-color: rgba(168, 85, 247, 0.2) !important;
+        color: #e9d5ff !important;
+        border: 1px solid rgba(168, 85, 247, 0.4) !important;
+        border-radius: 6px !important;
+        padding: 3px 10px !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        display: inline-block !important;
+        margin-top: 6px !important;
     }
-    .cat-title-annexes {
+
+    /* Carte Favori / Conteneur Vert */
+    .player-card-green, .player-card-fav {
+        border: 1.5px solid #10b981 !important;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.3), inset 0 0 10px rgba(16, 185, 129, 0.15) !important;
+        border-radius: 12px !important;
+        padding: 14px !important;
+        margin-bottom: 12px !important;
+    }
+
+    /* Titre du favori en vert néon */
+    .player-card-green h3, .player-card-fav h3, .player-title-green {
         color: #34d399 !important;
-        font-size: 1.25rem; font-weight: 800; margin-top: 22px; margin-bottom: 10px;
-        border-bottom: 2px solid rgba(52, 211, 153, 0.4); padding-bottom: 4px;
+        text-shadow: 0 0 8px rgba(52, 211, 153, 0.5) !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
     }
 
-    /* CARTES JOUEURS EN-TÊTE */
-    .player-card-a {
-        background: linear-gradient(145deg, rgba(244, 63, 94, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%);
-        border: 1.5px solid #f43f5e;
-        box-shadow: 0 0 10px rgba(244, 63, 94, 0.15);
-        border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
-    }
-    .player-card-b {
-        background: linear-gradient(145deg, rgba(52, 211, 153, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%);
-        border: 1.5px solid #10b981;
-        box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
-        border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
-    }
-    .player-name-a { font-size: 1.1rem !important; font-weight: 800; color: #fb7185; }
-    .player-name-b { font-size: 1.1rem !important; font-weight: 800; color: #34d399; }
-    
-    .style-badge-a {
-        background: rgba(244, 63, 94, 0.2); color: #fecdd3; border: 1px solid rgba(244, 63, 94, 0.5);
-        padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
-    }
-    .style-badge-b {
-        background: rgba(16, 185, 129, 0.2); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.5);
-        padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
+    /* Badge de style en vert */
+    .style-badge-green {
+        background-color: rgba(16, 185, 129, 0.2) !important;
+        color: #a7f3d0 !important;
+        border: 1px solid rgba(16, 185, 129, 0.4) !important;
+        border-radius: 6px !important;
+        padding: 3px 10px !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        display: inline-block !important;
+        margin-top: 6px !important;
     }
 
-    /* DÉLIMITATION STRICTE DES CASES DE METRIQUES */
-    [data-testid="stMetric"] {
-        background: #111827 !important;
+    /* ---------------------------------------------------------
+       3. CARTES METRIQUES ET STATISTIQUES (SEGMENTATION MOBILE)
+       --------------------------------------------------------- */
+    div[data-testid="stMetricValue"] {
+        font-size: 1.35rem !important;
+        font-weight: 800 !important;
+        color: #f8fafc !important;
+    }
+
+    /* Conteneur individuel des métriques */
+    div[data-testid="metric-container"] {
+        background: rgba(30, 41, 59, 0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 10px !important;
-        padding: 8px 6px !important;
-        text-align: center !important;
-        margin-bottom: 8px !important;
+        padding: 10px 14px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
     }
 
-    /* Bordure Rose/Titanium pour Matchup */
-    .card-matchup [data-testid="stMetric"] {
-        border: 1.5px solid rgba(251, 113, 133, 0.4) !important;
-        box-shadow: 0 2px 8px rgba(251, 113, 133, 0.08) !important;
-    }
-    .card-matchup [data-testid="stMetricValue"] { color: #fbbf24 !important; }
-
-    /* Bordure Cyan pour Service */
-    .card-service [data-testid="stMetric"] {
-        border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
-        box-shadow: 0 2px 8px rgba(56, 189, 248, 0.08) !important;
-    }
-    .card-service [data-testid="stMetricValue"] { color: #38bdf8 !important; }
-
-    [data-testid="stMetricValue"] {
-        font-size: 1.2rem !important; font-weight: 800 !important; line-height: 1.2 !important;
-    }
-    [data-testid="stMetricLabel"] {
-        font-size: 0.75rem !important; font-weight: 700 !important; color: #cbd5e1 !important;
-        white-space: normal !important; word-break: break-word !important;
+    /* ---------------------------------------------------------
+       4. SECTION VALUEBET (+EV) ET CARTE DE VERDICT
+       --------------------------------------------------------- */
+    .cat-title-valuebet {
+        color: #c084fc !important;
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        margin-top: 20px !important;
+        margin-bottom: 12px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
     }
 
-    /* BOÎTES D'ANALYSE */
-    .analysis-box {
-        background: rgba(17, 24, 39, 0.85);
-        border: 1px solid rgba(251, 191, 36, 0.4);
-        border-left: 4px solid #fbbf24;
-        border-radius: 8px; padding: 12px; margin-top: 8px; margin-bottom: 16px;
-        font-size: 0.85rem !important; line-height: 1.4 !important; color: #f1f5f9;
-    }
-
-    /* VALUEBET CARDS */
+    /* Carte ValueBet - Succès (+EV) */
     .ev-card-success {
-        background: rgba(16, 185, 129, 0.12);
-        border: 1.5px solid #10b981;
-        box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
-        border-radius: 10px; padding: 12px; margin-bottom: 10px;
+        border: 1.5px solid #10b981 !important;
+        background: rgba(16, 185, 129, 0.1) !important;
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+        color: #f1f5f9 !important;
     }
+
+    /* Carte ValueBet - Danger / Pas de Value (Harmonisé en violet au lieu du rouge) */
     .ev-card-danger {
-        background: rgba(239, 68, 68, 0.12);
-        border: 1.5px solid #ef4444;
-        box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
-        border-radius: 10px; padding: 12px; margin-bottom: 10px;
+        border: 1.5px solid #a855f7 !important;
+        background: rgba(168, 85, 247, 0.1) !important;
+        box-shadow: 0 0 12px rgba(168, 85, 247, 0.2) !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+        color: #f1f5f9 !important;
     }
 </style>
 """, unsafe_allow_html=True)
