@@ -17,134 +17,132 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# 2. DESIGN CSS "LUXE DARK UI" — LANDING PAGE HERO CENTER
+# 2. DESIGN CSS "CYBER PURPLE NEON & GLASSMORPHISM" (MOBILE & DESKTOP)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
-    /* THÈME GLOBAL DARK LUXE */
-    .stApp {
-        background-color: #0b0f19;
-        color: #f1f5f9;
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap');
+
+    /* CONFIGURATION GLOBALE */
+    html, body, [class*="css"], .stApp {
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        background-color: #070913 !important;
+        color: #f1f5f9 !important;
     }
 
-    /* BLOC HERO ACCUEIL CENTRÉ */
+    /* REDUCTION DE LA MARGE DU HAUT STREAMLIT (MOBILE) */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 2rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        max-width: 1200px !important;
+    }
+
+    /* HERO BANNER AVEC GLOW NEON VIOLET */
     .hero-container {
-        text-align: center;
-        padding: 40px 20px 30px 20px;
-        background: radial-gradient(circle at center, rgba(56, 189, 248, 0.08) 0%, rgba(11, 15, 25, 0) 70%);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        margin-bottom: 35px;
+        text-align: center !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 35px 15px 30px 15px !important;
+        margin: 0 auto 30px auto !important;
+        background: radial-gradient(circle at 50% 30%, rgba(168, 85, 247, 0.25) 0%, rgba(124, 58, 237, 0.08) 45%, rgba(7, 9, 19, 0) 80%) !important;
+        border-radius: 20px !important;
+        border: 1px solid rgba(168, 85, 247, 0.2) !important;
+        box-shadow: 0 0 50px -10px rgba(147, 51, 234, 0.3) !important;
     }
 
+    /* TITRE PRINCIPAL LUMINEUX VIOLET */
     .main-title {
-        font-size: 2.8rem !important;
+        font-size: clamp(2.0rem, 6vw, 3.2rem) !important;
         font-weight: 900 !important;
-        color: #ffffff !important;
-        letter-spacing: -0.8px;
-        margin-bottom: 10px !important;
-        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        line-height: 1.15 !important;
+        text-align: center !important;
+        margin: 0 auto 12px auto !important;
+        background: linear-gradient(135deg, #ffffff 10%, #d8b4fe 50%, #c084fc 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        filter: drop-shadow(0 0 18px rgba(192, 132, 252, 0.65)) !important;
+        display: block !important;
     }
-    
+
+    .main-title span {
+        display: inline-block;
+        filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.8));
+    }
+
+    /* SOUS-TITRE AVEC LUEUR SUBTILE */
     .sub-title {
-        font-size: 1.1rem !important;
-        color: #94a3b8 !important;
-        max-width: 650px;
+        font-size: clamp(0.85rem, 3vw, 1.05rem) !important;
+        color: #cbd5e1 !important;
+        text-align: center !important;
         margin: 0 auto !important;
-        line-height: 1.5;
+        max-width: 600px !important;
+        font-weight: 500 !important;
+        line-height: 1.5 !important;
+        opacity: 0.9 !important;
+        text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
     }
 
-    /* CONTENEUR DE SÉLECTION SUR LA PAGE */
-    .selection-box {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 35px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    /* CADRE DU FORMULAIRE DE SÉLECTION (HABILLAGE GLASSMORPHISM) */
+    div[data-testid="stForm"], div[data-testid="stVerticalBlock"] > div.stColumn {
+        border-radius: 14px;
     }
 
-    /* TITRES DE SECTIONS */
-    .cat-title-matchup { color: #fb7185; font-size: 1.3rem; font-weight: 800; margin-bottom: 15px; }
-    .cat-title-service { color: #38bdf8; font-size: 1.3rem; font-weight: 800; margin-top: 25px; margin-bottom: 15px; }
-    .cat-title-h2h { color: #a855f7; font-size: 1.3rem; font-weight: 800; margin-top: 25px; margin-bottom: 15px; }
-    .cat-title-valuebet { color: #f59e0b; font-size: 1.3rem; font-weight: 800; margin-top: 25px; margin-bottom: 15px; }
-    .cat-title-annexes { color: #10b981; font-size: 1.3rem; font-weight: 800; margin-top: 25px; margin-bottom: 15px; }
-
-    /* CARTES DES JOUEURS (EN-TÊTE) */
-    .player-header-a {
-        border: 1.5px solid rgba(244, 63, 94, 0.5) !important;
-        background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+    /* INPUTS & SELECTBOX STYLISÉS NEON */
+    div[data-baseweb="select"] > div {
+        background-color: rgba(15, 23, 42, 0.85) !important;
+        border: 1px solid rgba(168, 85, 247, 0.35) !important;
         border-radius: 10px !important;
-        padding: 12px 16px !important;
-        margin-bottom: 10px !important;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        color: #ffffff !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
     }
 
-    .player-header-b {
-        border: 1.5px solid rgba(16, 185, 129, 0.5) !important;
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
-        border-radius: 10px !important;
-        padding: 12px 16px !important;
-        margin-bottom: 10px !important;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    div[data-baseweb="select"]:hover > div {
+        border-color: rgba(192, 132, 252, 0.8) !important;
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.4) !important;
     }
 
-    .player-name-a { color: #fb7185 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
-    .player-name-b { color: #34d399 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
+    /* TITRES DE SECTIONS AVEC GLOW */
+    .cat-title-matchup { color: #f43f5e; font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.4)); }
+    .cat-title-service { color: #38bdf8; font-size: 1.25rem; font-weight: 800; margin-top: 20px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
+    .cat-title-h2h { color: #c084fc; font-size: 1.25rem; font-weight: 800; margin-top: 20px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.4)); }
+    .cat-title-valuebet { color: #fbbf24; font-size: 1.25rem; font-weight: 800; margin-top: 20px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4)); }
+    .cat-title-annexes { color: #34d399; font-size: 1.25rem; font-weight: 800; margin-top: 20px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.4)); }
 
-    .style-badge-a {
-        background-color: rgba(244, 63, 94, 0.2) !important;
-        color: #fda4af !important;
-        border: 1px solid rgba(244, 63, 94, 0.4) !important;
-        border-radius: 6px !important;
-        padding: 3px 10px !important;
-        font-size: 0.8rem !important;
-        font-weight: 600 !important;
-    }
-
-    .style-badge-b {
-        background-color: rgba(16, 185, 129, 0.2) !important;
-        color: #a7f3d0 !important;
-        border: 1px solid rgba(16, 185, 129, 0.4) !important;
-        border-radius: 6px !important;
-        padding: 3px 10px !important;
-        font-size: 0.8rem !important;
-        font-weight: 600 !important;
-    }
-
-    /* STYLISATION DES METRIQUES */
+    /* CARTES METRIQUES HAUTE-DÉFINITION */
     div[data-testid="stMetric"] {
-        background-color: rgba(15, 23, 42, 0.75) !important;
-        border: 1px solid rgba(255, 255, 255, 0.07) !important;
-        border-radius: 8px !important;
-        padding: 10px 12px !important;
+        background: linear-gradient(145deg, rgba(20, 27, 45, 0.9) 0%, rgba(13, 17, 30, 0.95) 100%) !important;
+        border: 1px solid rgba(168, 85, 247, 0.2) !important;
+        border-radius: 12px !important;
+        padding: 12px !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(10px) !important;
     }
 
     div[data-testid="stMetricValue"] {
-        font-size: 1.5rem !important;
+        font-size: 1.4rem !important;
         font-weight: 800 !important;
+        color: #ffffff !important;
     }
 
+    /* BOX D'ANALYSE EN BAS DE SECTION */
     .analysis-box {
-        background-color: rgba(30, 41, 59, 0.6);
-        border-left: 4px solid #38bdf8;
-        padding: 12px 16px;
-        border-radius: 6px;
-        margin-top: 15px;
-        margin-bottom: 15px;
-        font-size: 0.92rem;
+        background: linear-gradient(135deg, rgba(147, 51, 234, 0.12) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
+        border: 1px solid rgba(168, 85, 247, 0.35) !important;
+        border-left: 4px solid #a855f7 !important;
+        padding: 14px 18px !important;
+        border-radius: 10px !important;
+        margin-top: 15px !important;
+        margin-bottom: 15px !important;
+        font-size: 0.92rem !important;
+        box-shadow: 0 4px 20px rgba(147, 51, 234, 0.15) !important;
     }
 </style>
 
-<!-- HEADER ACCUEIL CENTRÉ -->
+<!-- HEADER HERO VIOLET NEON DÉDIÉ -->
 <div class='hero-container'>
-    <div class='main-title'>🎾 Tennis ValueBet AI Pro</div>
+    <div class='main-title'><span>🎾</span> Tennis ValueBet AI Pro</div>
     <div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV du Circuit ATP</div>
 </div>
 """, unsafe_allow_html=True)
