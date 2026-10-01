@@ -118,8 +118,6 @@ st.markdown("""
 <div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV • ATP Circuit</div>
 """, unsafe_allow_html=True)
 
-st.markdown("<div class='main-title'>🎾 Tennis ValueBet AI Pro</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV • ATP Circuit</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # 3. MATRICE DE STYLES ET FONCTIONS UTILITAIRES
