@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# 2. DESIGN CSS "LUXE DARK UI" AVEC BORDURES DÉLIMITÉES
+# 2. DESIGN CSS "LUXE DARK UI" — LANDING PAGE HERO CENTER
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -27,22 +27,50 @@ st.markdown("""
         color: #f1f5f9;
     }
 
-    /* TITRE PRINCIPAL */
+    /* BLOC HERO ACCUEIL CENTRÉ */
+    .hero-container {
+        text-align: center;
+        padding: 40px 20px 30px 20px;
+        background: radial-gradient(circle at center, rgba(56, 189, 248, 0.08) 0%, rgba(11, 15, 25, 0) 70%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        margin-bottom: 35px;
+    }
+
     .main-title {
-        font-size: 2.2rem !important;
-        font-weight: 800 !important;
+        font-size: 2.8rem !important;
+        font-weight: 900 !important;
         color: #ffffff !important;
-        margin-bottom: 2px !important;
+        letter-spacing: -0.8px;
+        margin-bottom: 10px !important;
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     
     .sub-title {
-        font-size: 0.95rem !important;
+        font-size: 1.1rem !important;
         color: #94a3b8 !important;
-        margin-bottom: 25px !important;
+        max-width: 650px;
+        margin: 0 auto !important;
+        line-height: 1.5;
+    }
+
+    /* CONTENEUR DE SÉLECTION SUR LA PAGE */
+    .selection-box {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 35px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     }
 
     /* TITRES DE SECTIONS */
     .cat-title-matchup { color: #fb7185; font-size: 1.3rem; font-weight: 800; margin-bottom: 15px; }
+    .cat-title-service { color: #38bdf8; font-size: 1.3rem; font-weight: 800; margin-top: 25px; margin-bottom: 15px; }
+    .cat-title-h2h { color: #a855f7; font-size: 1.3rem; font-weight: 800; margin-top: 25px; margin-bottom: 15px; }
+    .cat-title-valuebet { color: #f59e0b; font-size: 1.3rem; font-weight: 800; margin-top: 25px; margin-bottom: 15px; }
+    .cat-title-annexes { color: #10b981; font-size: 1.3rem; font-weight: 800; margin-top: 25px; margin-bottom: 15px; }
 
     /* CARTES DES JOUEURS (EN-TÊTE) */
     .player-header-a {
@@ -90,7 +118,7 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* STYLISATION DES BLOCS ST.METRIC / CONTAINERS */
+    /* STYLISATION DES METRIQUES */
     div[data-testid="stMetric"] {
         background-color: rgba(15, 23, 42, 0.75) !important;
         border: 1px solid rgba(255, 255, 255, 0.07) !important;
@@ -114,8 +142,11 @@ st.markdown("""
     }
 </style>
 
-<div class='main-title'>🎾 Tennis ValueBet AI Pro</div>
-<div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV • ATP Circuit</div>
+<!-- HEADER ACCUEIL CENTRÉ -->
+<div class='hero-container'>
+    <div class='main-title'>🎾 Tennis ValueBet AI Pro</div>
+    <div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV du Circuit ATP</div>
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -221,7 +252,7 @@ if df_circuit.empty:
     st.stop()
 
 # ---------------------------------------------------------
-# 5. SOUS-SURFACES & BARRE LATÉRALE
+# 5. BARRE DE SÉLECTION DES JOUEURS SUR LA PAGE
 # ---------------------------------------------------------
 SURFACE_VARIATIONS = [
     "Dur rapide", "Dur moyen", "Dur lent", "Dur intérieur / Moquette",
@@ -230,27 +261,34 @@ SURFACE_VARIATIONS = [
 ]
 
 SURFACE_FACTORS = {
-    "Dur rapide":                   {"serve_weight": 1.30, "return_weight": 0.80, "base_surface": "Hard"},
-    "Dur moyen":                    {"serve_weight": 1.00, "return_weight": 1.00, "base_surface": "Hard"},
-    "Dur lent":                     {"serve_weight": 0.85, "return_weight": 1.15, "base_surface": "Hard"},
-    "Dur intérieur / Moquette":     {"serve_weight": 1.35, "return_weight": 0.75, "base_surface": "Hard"},
+    "Dur rapide":                     {"serve_weight": 1.30, "return_weight": 0.80, "base_surface": "Hard"},
+    "Dur moyen":                      {"serve_weight": 1.00, "return_weight": 1.00, "base_surface": "Hard"},
+    "Dur lent":                       {"serve_weight": 0.85, "return_weight": 1.15, "base_surface": "Hard"},
+    "Dur intérieur / Moquette":      {"serve_weight": 1.35, "return_weight": 0.75, "base_surface": "Hard"},
     "Terre battue ocre classique":  {"serve_weight": 0.70, "return_weight": 1.30, "base_surface": "Clay"},
     "Terre battue verte (Har-Tru)": {"serve_weight": 0.80, "return_weight": 1.20, "base_surface": "Clay"},
-    "Terre battue synthétique":     {"serve_weight": 0.85, "return_weight": 1.15, "base_surface": "Clay"},
-    "Gazon naturel rapide":         {"serve_weight": 1.40, "return_weight": 0.70, "base_surface": "Grass"},
+    "Terre battue synthétique":      {"serve_weight": 0.85, "return_weight": 1.15, "base_surface": "Clay"},
+    "Gazon naturel rapide":          {"serve_weight": 1.40, "return_weight": 0.70, "base_surface": "Grass"},
     "Gazon naturel lent (Wimbledon)":{"serve_weight": 1.10, "return_weight": 0.95, "base_surface": "Grass"},
-    "Gazon synthétique":            {"serve_weight": 1.25, "return_weight": 0.80, "base_surface": "Grass"}
+    "Gazon synthétique":             {"serve_weight": 1.25, "return_weight": 0.80, "base_surface": "Grass"}
 }
-
-st.sidebar.markdown("### ⚙️ Configuration du Match")
 
 all_players = sorted(list(set(df_circuit['winner_name'].unique()).union(set(df_circuit['loser_name'].unique()))))
 
-player_a = st.sidebar.selectbox("🎾 Joueur A", all_players, index=0)
-default_b_idx = 1 if len(all_players) > 1 else 0
-player_b = st.sidebar.selectbox("🎾 Joueur B", all_players, index=default_b_idx)
+# Boîte de sélection principale sur la page
+with st.container():
+    st.markdown("### ⚙️ Configuration du Matchup")
+    sel_col1, sel_col2, sel_col3 = st.columns([1, 1, 1])
+    
+    with sel_col1:
+        player_a = st.selectbox("🎾 Joueur A", all_players, index=0)
+    with sel_col2:
+        default_b_idx = 1 if len(all_players) > 1 else 0
+        player_b = st.selectbox("🎾 Joueur B", all_players, index=default_b_idx)
+    with sel_col3:
+        surface = st.selectbox("🌱 Surface spécifique", SURFACE_VARIATIONS)
 
-surface = st.sidebar.selectbox("🌱 Surface spécifique", SURFACE_VARIATIONS)
+st.write("") # Espacement
 
 # ---------------------------------------------------------
 # 6. CALCULS METRIQUES & STYLES PONDÉRÉS
