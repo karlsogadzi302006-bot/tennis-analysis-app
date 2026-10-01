@@ -17,168 +17,99 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# 2. DESIGN CSS "CYBER PURPLE NEON & GLASSMORPHISM" COMPLET
+# HERO BANNER CYBER LUXE (SANS ENCADRÉ - BADGES FUTURISTES)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap');
-
-    /* CONFIGURATION GLOBALE */
-    html, body, [class*="css"], .stApp {
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        background-color: #070913 !important;
-        color: #f1f5f9 !important;
-    }
-
-    .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 2rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        max-width: 1200px !important;
-    }
-
-    /* HERO BANNER AVEC GLOW NEON VIOLET CENTRÉ */
-    .hero-container {
+    /* LUEUR VIOLETTE DIFFUSE EN ARRIÈRE-PLAN */
+    .hero-glow-wrapper {
+        position: relative;
         text-align: center !important;
-        justify-content: center !important;
-        align-items: center !important;
-        padding: 35px 15px 30px 15px !important;
-        margin: 0 auto 30px auto !important;
-        background: radial-gradient(circle at 50% 30%, rgba(168, 85, 247, 0.25) 0%, rgba(124, 58, 237, 0.08) 45%, rgba(7, 9, 19, 0) 80%) !important;
-        border-radius: 20px !important;
-        border: 1px solid rgba(168, 85, 247, 0.2) !important;
-        box-shadow: 0 0 50px -10px rgba(147, 51, 234, 0.3) !important;
+        padding: 20px 10px 15px 10px !important;
+        margin: 0 auto 25px auto !important;
+        background: radial-gradient(ellipse at 50% 20%, rgba(168, 85, 247, 0.22) 0%, rgba(124, 58, 237, 0.05) 50%, rgba(7, 9, 19, 0) 80%) !important;
     }
 
-    .main-title {
-        font-size: clamp(2.0rem, 6vw, 3.2rem) !important;
+    /* TYPOGRAPHIE AVEC RELIEF ET GLOW NEON */
+    .hero-title-neon {
+        font-size: clamp(2.2rem, 6vw, 3.4rem) !important;
         font-weight: 900 !important;
-        line-height: 1.15 !important;
-        text-align: center !important;
-        margin: 0 auto 12px auto !important;
-        background: linear-gradient(135deg, #ffffff 10%, #d8b4fe 50%, #c084fc 100%) !important;
+        letter-spacing: -1px !important;
+        margin: 0 auto 8px auto !important;
+        background: linear-gradient(135deg, #ffffff 20%, #e9d5ff 60%, #c084fc 100%) !important;
         -webkit-background-clip: text !important;
         -webkit-text-fill-color: transparent !important;
-        filter: drop-shadow(0 0 18px rgba(192, 132, 252, 0.65)) !important;
-        display: block !important;
+        filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.75)) !important;
     }
 
-    .sub-title {
-        font-size: clamp(0.85rem, 3vw, 1.05rem) !important;
+    .hero-subtitle-neon {
+        font-size: clamp(0.9rem, 2.5vw, 1.1rem) !important;
         color: #cbd5e1 !important;
-        text-align: center !important;
-        margin: 0 auto !important;
-        max-width: 600px !important;
         font-weight: 500 !important;
-        line-height: 1.5 !important;
-        text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+        margin-bottom: 18px !important;
+        text-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
     }
 
-    /* TITRES DE SECTIONS */
-    .cat-title-matchup { color: #f43f5e; font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.4)); }
-    .cat-title-service { color: #38bdf8; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
-    .cat-title-h2h { color: #c084fc; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.4)); }
-    .cat-title-valuebet { color: #fbbf24; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4)); }
-    .cat-title-annexes { color: #34d399; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.4)); }
-
-    /* CARTES DES JOUEURS (EN-TÊTE JOUEUR A ET B) */
-    .player-header-a {
-        border: 1.5px solid rgba(244, 63, 94, 0.5) !important;
-        background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
-        border-radius: 10px !important;
-        padding: 12px 16px !important;
-        margin-bottom: 10px !important;
+    /* BARRE D'ITEMS & BADGES FUTURISTES */
+    .hero-badges-container {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
     }
 
-    .player-header-b {
-        border: 1.5px solid rgba(16, 185, 129, 0.5) !important;
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
-        border-radius: 10px !important;
-        padding: 12px 16px !important;
-        margin-bottom: 10px !important;
-        display: flex;
-        justify-content: space-between;
+    .hero-badge {
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid rgba(168, 85, 247, 0.35);
+        color: #d8b4fe;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+        box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
+        backdrop-filter: blur(8px);
+    }
+
+    /* BADGE STATUT LIVE AVEC POINT PULSANT */
+    .hero-status-badge {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        color: #34d399;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 20px;
+        display: inline-flex;
         align-items: center;
+        gap: 6px;
     }
 
-    .player-name-a { color: #fb7185 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
-    .player-name-b { color: #34d399 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
-
-    .style-badge-a {
-        background-color: rgba(244, 63, 94, 0.2) !important;
-        color: #fda4af !important;
-        border: 1px solid rgba(244, 63, 94, 0.4) !important;
-        border-radius: 6px !important;
-        padding: 3px 10px !important;
-        font-size: 0.8rem !important;
-        font-weight: 600 !important;
-    }
-
-    .style-badge-b {
-        background-color: rgba(16, 185, 129, 0.2) !important;
-        color: #a7f3d0 !important;
-        border: 1px solid rgba(16, 185, 129, 0.4) !important;
-        border-radius: 6px !important;
-        padding: 3px 10px !important;
-        font-size: 0.8rem !important;
-        font-weight: 600 !important;
-    }
-
-    /* CARTES MÉTRIQUES & GRILLES */
-    div[data-testid="stMetric"] {
-        background: linear-gradient(145deg, rgba(20, 27, 45, 0.9) 0%, rgba(13, 17, 30, 0.95) 100%) !important;
-        border: 1px solid rgba(168, 85, 247, 0.2) !important;
-        border-radius: 12px !important;
-        padding: 12px !important;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
-    }
-
-    div[data-testid="stMetricValue"] {
-        font-size: 1.4rem !important;
-        font-weight: 800 !important;
-        color: #ffffff !important;
-    }
-
-    /* BOX D'ANALYSE */
-    .analysis-box {
-        background: linear-gradient(135deg, rgba(147, 51, 234, 0.12) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
-        border: 1px solid rgba(168, 85, 247, 0.35) !important;
-        border-left: 4px solid #a855f7 !important;
-        padding: 14px 18px !important;
-        border-radius: 10px !important;
-        margin-top: 15px !important;
-        margin-bottom: 15px !important;
-        font-size: 0.92rem !important;
-    }
-
-    /* VALUEBET TERMINAL CARDS */
-    .ev-card-success {
-        border: 1.5px solid #10b981 !important;
-        background: rgba(16, 185, 129, 0.1) !important;
-        box-shadow: 0 0 12px rgba(16, 185, 129, 0.2) !important;
-        border-radius: 8px !important;
-        padding: 12px !important;
-        margin-bottom: 10px !important;
-    }
-
-    .ev-card-danger {
-        border: 1.5px solid #f43f5e !important;
-        background: rgba(244, 63, 94, 0.1) !important;
-        box-shadow: 0 0 12px rgba(244, 63, 94, 0.15) !important;
-        border-radius: 8px !important;
-        padding: 12px !important;
-        margin-bottom: 10px !important;
+    .status-dot {
+        width: 7px;
+        height: 7px;
+        background-color: #10b981;
+        border-radius: 50%;
+        box-shadow: 0 0 8px #10b981;
     }
 </style>
 
-<!-- HEADER HERO VIOLET NEON -->
-<div class='hero-container'>
-    <div class='main-title'>🎾 Tennis ValueBet AI Pro</div>
-    <div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV du Circuit ATP</div>
+<!-- STRUCTURE DU HERO SANS ENCADRÉ -->
+<div class='hero-glow-wrapper'>
+    <div class='hero-title-neon'>🎾 Tennis ValueBet AI Pro</div>
+    <div class='hero-subtitle-neon'>Plateforme d'Analyse Prédictive & Détection +EV du Circuit ATP</div>
+    
+    <!-- ITEMS DE STATUT / BADGES -->
+    <div class='hero-badges-container'>
+        <div class='hero-status-badge'>
+            <span class='status-dot'></span> MODEL OPTIMAL
+        </div>
+        <div class='hero-badge'>⚡ 5-PILLARS ENGINE</div>
+        <div class='hero-badge'>🎯 CALIBRATION 280</div>
+        <div class='hero-badge'>🏆 ATP DATASET</div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
