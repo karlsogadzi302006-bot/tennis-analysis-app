@@ -167,6 +167,7 @@ STYLE_SIMILARITY = {
     "Contreur / Limeur": {"Gros Serveur": 0.2, "Serveur-Volleyeur": 0.3, "Attaquant du fond": 0.6, "Polyvalent": 0.8, "Relanceur / Cadenceur": 0.9, "Contreur / Limeur": 1.0}
 }
 
+
 @st.cache_data
 def load_data():
     years = [2021, 2022, 2023, 2024, 2025, 2026]
@@ -175,15 +176,20 @@ def load_data():
         url = f"https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_{y}.csv"
         try:
             df = pd.read_csv(url)
-            df_list.append(df)
+            if not df.empty and 'winner_name' in df.columns:
+                df_list.append(df)
         except Exception:
             pass
+            
     if not df_list:
-        return pd.DataFrame()
+        # DataFrame de secours si le téléchargement échoue
+        return pd.DataFrame(columns=['winner_name', 'loser_name', 'winner_clean', 'loser_clean', 'tourney_date', 'surface', 'score'])
     
     df_all = pd.concat(df_list, ignore_index=True)
-    df_all['winner_clean'] = df_all['winner_name'].str.strip().str.lower()
-    df_all['loser_clean'] = df_all['loser_name'].str.strip().str.lower()
+    
+    # Création explicite des colonnes nettoyées
+    df_all['winner_clean'] = df_all['winner_name'].astype(str).str.strip().str.lower()
+    df_all['loser_clean'] = df_all['loser_name'].astype(str).str.strip().str.lower()
     df_all['tourney_date'] = pd.to_datetime(df_all['tourney_date'].astype(str), format='%Y%m%d', errors='coerce')
     
     def calc_games(score_str):
@@ -210,10 +216,17 @@ def clean_name(name):
 
 def get_player_matches(df, player_name):
     clean_p = clean_name(player_name)
+    
+    # Vérification de sécurité sur la présence des colonnes
+    if df.empty or 'winner_clean' not in df.columns or 'loser_clean' not in df.columns:
+        return pd.DataFrame(), pd.DataFrame()
+        
     p_wins = df[df['winner_clean'] == clean_p].copy()
     p_losses = df[df['loser_clean'] == clean_p].copy()
-    p_wins = p_wins.drop_duplicates(subset=['tourney_date', 'loser_clean', 'score'])
-    p_losses = p_losses.drop_duplicates(subset=['tourney_date', 'winner_clean', 'score'])
+    
+    p_wins = p_wins.drop_duplicates(subset=['tourney_date', 'loser_clean', 'score']) if not p_wins.empty else p_wins
+    p_losses = p_losses.drop_duplicates(subset=['tourney_date', 'winner_clean', 'score']) if not p_losses.empty else p_losses
+    
     return p_wins, p_losses
 
 player_styles_map = {}
