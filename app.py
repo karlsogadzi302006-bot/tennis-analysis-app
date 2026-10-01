@@ -500,7 +500,7 @@ with col1:
         
         g3, g4 = st.columns(2)
         g3.metric("Forme", f"{stats_a['last_10_wins']}/10")
-        g4.metric("Vs Style", f"{winrate_a_vs_b_style*100:.0f}%")
+        g4.metric("Vs Style adverse", f"{winrate_a_vs_b_style*100:.0f}%")
 
 with col2:
     # En-tête Joueur B
@@ -521,7 +521,7 @@ with col2:
         
         g3, g4 = st.columns(2)
         g3.metric("Forme", f"{stats_b['last_10_wins']}/10")
-        g4.metric("Vs Style", f"{winrate_b_vs_a_style*100:.0f}%")
+        g4.metric("Vs Style adverse", f"{winrate_b_vs_a_style*100:.0f}%")
 
 # Box d'analyse sous les cartes
 fav_surface = player_a if stats_a['surface_winrate'] >= stats_b['surface_winrate'] else player_b
