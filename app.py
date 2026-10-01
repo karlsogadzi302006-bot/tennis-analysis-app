@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# 2. DESIGN CSS "CYBER PURPLE NEON & GLASSMORPHISM" (MOBILE & DESKTOP)
+# 2. DESIGN CSS "CYBER PURPLE NEON & GLASSMORPHISM" COMPLET
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -30,7 +30,6 @@ st.markdown("""
         color: #f1f5f9 !important;
     }
 
-    /* REDUCTION DE LA MARGE DU HAUT STREAMLIT (MOBILE) */
     .block-container {
         padding-top: 1.5rem !important;
         padding-bottom: 2rem !important;
@@ -39,7 +38,7 @@ st.markdown("""
         max-width: 1200px !important;
     }
 
-    /* HERO BANNER AVEC GLOW NEON VIOLET */
+    /* HERO BANNER AVEC GLOW NEON VIOLET CENTRÉ */
     .hero-container {
         text-align: center !important;
         justify-content: center !important;
@@ -52,7 +51,6 @@ st.markdown("""
         box-shadow: 0 0 50px -10px rgba(147, 51, 234, 0.3) !important;
     }
 
-    /* TITRE PRINCIPAL LUMINEUX VIOLET */
     .main-title {
         font-size: clamp(2.0rem, 6vw, 3.2rem) !important;
         font-weight: 900 !important;
@@ -66,12 +64,6 @@ st.markdown("""
         display: block !important;
     }
 
-    .main-title span {
-        display: inline-block;
-        filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.8));
-    }
-
-    /* SOUS-TITRE AVEC LUEUR SUBTILE */
     .sub-title {
         font-size: clamp(0.85rem, 3vw, 1.05rem) !important;
         color: #cbd5e1 !important;
@@ -80,44 +72,69 @@ st.markdown("""
         max-width: 600px !important;
         font-weight: 500 !important;
         line-height: 1.5 !important;
-        opacity: 0.9 !important;
         text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
     }
 
-    /* CADRE DU FORMULAIRE DE SÉLECTION (HABILLAGE GLASSMORPHISM) */
-    div[data-testid="stForm"], div[data-testid="stVerticalBlock"] > div.stColumn {
-        border-radius: 14px;
-    }
-
-    /* INPUTS & SELECTBOX STYLISÉS NEON */
-    div[data-baseweb="select"] > div {
-        background-color: rgba(15, 23, 42, 0.85) !important;
-        border: 1px solid rgba(168, 85, 247, 0.35) !important;
-        border-radius: 10px !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
-    }
-
-    div[data-baseweb="select"]:hover > div {
-        border-color: rgba(192, 132, 252, 0.8) !important;
-        box-shadow: 0 0 15px rgba(168, 85, 247, 0.4) !important;
-    }
-
-    /* TITRES DE SECTIONS AVEC GLOW */
+    /* TITRES DE SECTIONS */
     .cat-title-matchup { color: #f43f5e; font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.4)); }
-    .cat-title-service { color: #38bdf8; font-size: 1.25rem; font-weight: 800; margin-top: 20px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
-    .cat-title-h2h { color: #c084fc; font-size: 1.25rem; font-weight: 800; margin-top: 20px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.4)); }
-    .cat-title-valuebet { color: #fbbf24; font-size: 1.25rem; font-weight: 800; margin-top: 20px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4)); }
-    .cat-title-annexes { color: #34d399; font-size: 1.25rem; font-weight: 800; margin-top: 20px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.4)); }
+    .cat-title-service { color: #38bdf8; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
+    .cat-title-h2h { color: #c084fc; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.4)); }
+    .cat-title-valuebet { color: #fbbf24; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4)); }
+    .cat-title-annexes { color: #34d399; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.4)); }
 
-    /* CARTES METRIQUES HAUTE-DÉFINITION */
+    /* CARTES DES JOUEURS (EN-TÊTE JOUEUR A ET B) */
+    .player-header-a {
+        border: 1.5px solid rgba(244, 63, 94, 0.5) !important;
+        background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+        border-radius: 10px !important;
+        padding: 12px 16px !important;
+        margin-bottom: 10px !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .player-header-b {
+        border: 1.5px solid rgba(16, 185, 129, 0.5) !important;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+        border-radius: 10px !important;
+        padding: 12px 16px !important;
+        margin-bottom: 10px !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .player-name-a { color: #fb7185 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
+    .player-name-b { color: #34d399 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
+
+    .style-badge-a {
+        background-color: rgba(244, 63, 94, 0.2) !important;
+        color: #fda4af !important;
+        border: 1px solid rgba(244, 63, 94, 0.4) !important;
+        border-radius: 6px !important;
+        padding: 3px 10px !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+    }
+
+    .style-badge-b {
+        background-color: rgba(16, 185, 129, 0.2) !important;
+        color: #a7f3d0 !important;
+        border: 1px solid rgba(16, 185, 129, 0.4) !important;
+        border-radius: 6px !important;
+        padding: 3px 10px !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+    }
+
+    /* CARTES MÉTRIQUES & GRILLES */
     div[data-testid="stMetric"] {
         background: linear-gradient(145deg, rgba(20, 27, 45, 0.9) 0%, rgba(13, 17, 30, 0.95) 100%) !important;
         border: 1px solid rgba(168, 85, 247, 0.2) !important;
         border-radius: 12px !important;
         padding: 12px !important;
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
-        backdrop-filter: blur(10px) !important;
     }
 
     div[data-testid="stMetricValue"] {
@@ -126,7 +143,7 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* BOX D'ANALYSE EN BAS DE SECTION */
+    /* BOX D'ANALYSE */
     .analysis-box {
         background: linear-gradient(135deg, rgba(147, 51, 234, 0.12) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
         border: 1px solid rgba(168, 85, 247, 0.35) !important;
@@ -136,13 +153,31 @@ st.markdown("""
         margin-top: 15px !important;
         margin-bottom: 15px !important;
         font-size: 0.92rem !important;
-        box-shadow: 0 4px 20px rgba(147, 51, 234, 0.15) !important;
+    }
+
+    /* VALUEBET TERMINAL CARDS */
+    .ev-card-success {
+        border: 1.5px solid #10b981 !important;
+        background: rgba(16, 185, 129, 0.1) !important;
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.2) !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .ev-card-danger {
+        border: 1.5px solid #f43f5e !important;
+        background: rgba(244, 63, 94, 0.1) !important;
+        box-shadow: 0 0 12px rgba(244, 63, 94, 0.15) !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        margin-bottom: 10px !important;
     }
 </style>
 
-<!-- HEADER HERO VIOLET NEON DÉDIÉ -->
+<!-- HEADER HERO VIOLET NEON -->
 <div class='hero-container'>
-    <div class='main-title'><span>🎾</span> Tennis ValueBet AI Pro</div>
+    <div class='main-title'>🎾 Tennis ValueBet AI Pro</div>
     <div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV du Circuit ATP</div>
 </div>
 """, unsafe_allow_html=True)
