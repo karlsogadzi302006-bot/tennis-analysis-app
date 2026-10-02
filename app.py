@@ -764,14 +764,10 @@ with tab_tennis:
 # 5. CONTENU ONGLET NHL PLAYER PROPS
 # =========================================================
 with tab_nhl:
-    st.markdown("<div class='main-title'>🏒 NHL Player Props Analyzer</div>", unsafe_allow_html=True)
-    st.markdown("<div class='sub-title'>Modèle prédictif 5 piliers : TOI, PP1, SOG, GA/G adverse & Contexte</div>", unsafe_allow_html=True)
-    st.write("")
-
-    # En-têtes pour ne pas être bloqué par l'API
+    # 1. Configuration des en-têtes API
     HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
-    # 1. Chargement des équipes NHL (pour les statistiques de l'adversaire)
+    # 2. Récupération des équipes (pour les buts alloués GA/G)
     @st.cache_data(ttl=3600)
     def fetch_nhl_teams_standings():
         try:
@@ -780,7 +776,7 @@ with tab_nhl:
                 data = res.json().get('standings', [])
                 teams = {}
                 for t in data:
-                    name = t.get('teamName', {}).get('default', 'Unknown')
+                    name = t.get('teamName', {}).get('default', 'Inconnu')
                     abbrev = t.get('teamAbbrev', {}).get('default', '')
                     games = max(t.get('gamesPlayed', 1), 1)
                     ga = t.get('goalAgainst', 0)
@@ -793,25 +789,25 @@ with tab_nhl:
             pass
         return {"Adversaire Moyen (3.10 GA/G)": {'ga_g': 3.10, 'abbrev': 'DEF'}}
 
-    # 2. Chargement des meilleurs joueurs
+    # 3. Récupération de TOUS les joueurs NHL (limit=-1 pour enlever la restriction)
     @st.cache_data(ttl=3600)
-    def fetch_nhl_leaders():
-        try:
-            res = requests.get("https://api-web.nhle.com/v1/skater-stats-leaders/current?categories=points&limit=100", headers=HEADERS, timeout=5)
-            if res.status_code == 200:
-                data = res.json().get('points', [])
-                if data: return data
-        except Exception:
-            pass
-        return [
-            {"id": 8478402, "firstName": {"default": "Connor"}, "lastName": {"default": "McDavid"}, "shots": 260, "points": 132, "gamesPlayed": 80},
-            {"id": 8477934, "firstName": {"default": "Leon"}, "lastName": {"default": "Draisaitl"}, "shots": 220, "points": 106, "gamesPlayed": 81},
-            {"id": 8479318, "firstName": {"default": "Auston"}, "lastName": {"default": "Matthews"}, "shots": 330, "points": 107, "gamesPlayed": 81},
-            {"id": 8477493, "firstName": {"default": "Nathan"}, "lastName": {"default": "MacKinnon"}, "shots": 340, "points": 140, "gamesPlayed": 82},
-            {"id": 8480069, "firstName": {"default": "Cale"}, "lastName": {"default": "Makar"}, "shots": 230, "points": 90, "gamesPlayed": 77}
+    def fetch_all_nhl_players():
+        urls = [
+            "https://api-web.nhle.com/v1/skater-stats-leaders/current?categories=points&limit=-1",
+            "https://api-web.nhle.com/v1/skater-stats-leaders/20252026/2?categories=points&limit=-1"
         ]
+        for url in urls:
+            try:
+                res = requests.get(url, headers=HEADERS, timeout=8)
+                if res.status_code == 200:
+                    data = res.json().get('points', []) or res.json().get('data', [])
+                    if len(data) > 10:
+                        return data
+            except Exception:
+                continue
+        return []
 
-    # 3. Récupération des logs de matchs pour la période (5, 10, 20 matchs)
+    # 4. Récupération des logs de match (forme dynamique)
     @st.cache_data(ttl=1800)
     def fetch_player_game_log(player_id, limit_games):
         try:
@@ -827,61 +823,51 @@ with tab_nhl:
             pass
         return []
 
-    # Exécution des requêtes
-    leaders = fetch_nhl_leaders()
+    # Exécution du chargement
+    leaders = fetch_all_nhl_players()
     teams_dict = fetch_nhl_teams_standings()
 
     if leaders:
-        player_names = [f"{p['firstName']['default']} {p['lastName']['default']}" for p in leaders]
+        # Tri alphabétique de tous les joueurs disponibles
+        player_dict = {f"{p['firstName']['default']} {p['lastName']['default']} ({p.get('teamAbbrev', 'NHL')})": p for p in leaders}
+        sorted_player_names = sorted(list(player_dict.keys()))
 
         col1, col2 = st.columns(2)
         with col1:
-            selected_player_name = st.selectbox("Sélectionner le joueur", player_names)
-            selected_player = next(p for p in leaders if f"{p['firstName']['default']} {p['lastName']['default']}" == selected_player_name)
+            selected_player_label = st.selectbox("Sélectionner le joueur", sorted_player_names)
+            selected_player = player_dict[selected_player_label]
             p_id = selected_player['id']
 
-            period = st.selectbox("Période de forme à analyser", ["5 derniers matchs", "10 derniers matchs", "20 derniers matchs", "Saison"])
+            period = st.selectbox("Période d'analyse", ["5 derniers matchs", "10 derniers matchs", "20 derniers matchs", "Saison"])
             target_prop = st.radio("Type de Pari (Prop)", ["Point", "But", "Passe"], horizontal=True)
             home_away = st.radio("Lieu du match", ["Domicile (Last Change)", "Extérieur"], horizontal=True)
 
         with col2:
             st.markdown("### 📊 Contexte Adversaire & Ligne")
             opp_choice = st.selectbox("Équipe adverse", list(teams_dict.keys()))
-            
-            # Récupération automatique du GA/G de l'adversaire choisi
             auto_ga_g = teams_dict[opp_choice]['ga_g']
-            st.info(f"🛡️ **Moyenne Buts Alloués par {opp_choice}** : **{auto_ga_g} GA/G** (donnée officielle NHL)")
+            st.info(f"🛡️ **Moyenne Buts Alloués par {opp_choice}** : **{auto_ga_g} GA/G**")
 
             opp_pk_pct = st.slider("Efficacité Penalty Kill Adverse (PK%)", 60.0, 90.0, 77.0, step=0.5)
-            is_pp1 = st.checkbox("Le joueur évolue sur l'Unité 1 d'Avantage Numérique (PP1)", value=True)
+            is_pp1 = st.checkbox("Le joueur évolue sur le PP1", value=True)
 
-        # Calcul des métriques sur la période choisie via Game Logs
+        # Calcul dynamique selon la période
         game_logs = fetch_player_game_log(p_id, period)
 
         if game_logs:
             num_g = len(game_logs)
             tot_shots = sum(g.get('shots', 0) for g in game_logs)
             tot_points = sum(g.get('points', 0) for g in game_logs)
-            tot_goals = sum(g.get('goals', 0) for g in game_logs)
-            tot_assists = sum(g.get('assists', 0) for g in game_logs)
-
             sog_pg = tot_shots / num_g
             pts_pg = tot_points / num_g
-            goals_pg = tot_goals / num_g
-            assists_pg = tot_assists / num_g
         else:
-            # Fallback sur les stats de saison
             games = max(selected_player.get('gamesPlayed', 1), 1)
             sog_pg = selected_player.get('shots', 0) / games
             pts_pg = selected_player.get('points', 0) / games
-            goals_pg = selected_player.get('goals', 0) / games
-            assists_pg = selected_player.get('assists', 0) / games
 
-        # Algorithme de scoring basé sur les 5 critères
+        # Algorithme de scoring
         score = 50.0
-
-        if is_pp1:
-            score += 12.0
+        if is_pp1: score += 12.0
 
         if target_prop == "But":
             if sog_pg >= 3.5: score += 15.0
@@ -896,30 +882,20 @@ with tab_nhl:
         if is_pp1 and opp_pk_pct < 76.0 and target_prop in ["Passe", "Point"]:
             score += 8.0
 
-        if home_away == "Domicile (Last Change)":
-            score += 5.0
-
+        if home_away == "Domicile (Last Change)": score += 5.0
         score = min(max(round(score, 1), 10.0), 95.0)
 
         st.markdown("---")
-
-        # Affichage des métriques dynamiques réelles
         c1, c2, c3 = st.columns(3)
-        with c1:
-            st.metric(f"SOG/Match ({period})", f"{round(sog_pg, 2)}")
-        with c2:
-            st.metric(f"Points/Match ({period})", f"{round(pts_pg, 2)}")
-        with c3:
-            st.metric(f"Score Confiance : {target_prop}", f"{score}%")
+        c1.metric(f"Moyenne Tirs ({period})", f"{round(sog_pg, 2)}")
+        c2.metric(f"Moyenne Points ({period})", f"{round(pts_pg, 2)}")
+        c3.metric(f"Score Confiance : {target_prop}", f"{score}%")
 
         if score >= 70:
-            st.success(f"🔥 **ValueBet Forte** : {selected_player_name} pour 1+ {target_prop}.")
+            st.success(f"🔥 **ValueBet Forte** : {selected_player_label} pour 1+ {target_prop}.")
         elif score >= 55:
-            st.info(f"🟡 **Opportunité Modérée** : {selected_player_name} pour 1+ {target_prop}.")
+            st.info(f"🟡 **Opportunité Modérée** : {selected_player_label} pour 1+ {target_prop}.")
         else:
             st.error(f"⚠️ **À Éviter** : Facteurs défavorables pour 1+ {target_prop} ce soir.")
     else:
-        st.warning("Impossible de charger les données NHL en direct pour le moment.")
-            st.error(f"⚠️ **À Éviter** : Facteurs défavorables pour 1+ {target_prop} ce soir.")
-    else:
-        st.warning("Impossible de charger les données NHL en direct pour le moment.")
+        st.warning("Chargement des joueurs NHL en cours ou API temporairement indisponible...")
