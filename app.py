@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import math
 from datetime import date
+import requests
+
 
 # ---------------------------------------------------------
 # 1. CONFIGURATION DE PAGE OBLIGATOIRE
@@ -777,6 +779,10 @@ with tab_nhl:
     }
     LEAGUE_AVG_GA = 3.05
     STAT_KEY = {"Point": "points", "But": "goals", "Passe": "assists"}
+    TEAM_ABBREVS = ["ANA", "BOS", "BUF", "CGY", "CAR", "CHI", "COL", "CBJ", "DAL", "DET",
+                    "EDM", "FLA", "LAK", "MIN", "MTL", "NSH", "NJD", "NYI", "NYR", "OTT",
+                    "PHI", "PIT", "SJS", "SEA", "STL", "TBL", "TOR", "UTA", "VAN", "VGK",
+                    "WSH", "WPG"]
 
     # ---------- Utilitaires saison ----------
     def current_season_id():
@@ -792,7 +798,7 @@ with tab_nhl:
     @st.cache_data(ttl=3600)
     def fetch_nhl_teams_standings():
         def parse(url):
-            res = requests.get(url, headers=HEADERS, timeout=8)
+            res = requests.get(url, headers=HEADERS, timeout=10)
             res.raise_for_status()
             teams = {}
             for t in res.json().get("standings", []):
@@ -809,9 +815,9 @@ with tab_nhl:
 
         try:
             teams = parse("[api-web.nhle.com](https://api-web.nhle.com/v1/standings/now)")
-            if not teams:
-                last_year = int(str(previous_season_id(current_season_id()))[4:])
-                teams = parse(f"[api-web.nhle.com](https://api-web.nhle.com/v1/standings/{last_year}-04-15)")
+            if not teams:  # début de saison -> classement final de la saison précédente
+                end_year = str(previous_season_id(current_season_id()))[4:]
+                teams = parse(f"[api-web.nhle.com](https://api-web.nhle.com/v1/standings/{end_year}-04-15)")
             if teams:
                 return dict(sorted(teams.items()))
         except Exception:
@@ -819,27 +825,22 @@ with tab_nhl:
         return {"Adversaire moyen": {"ga_g": LEAGUE_AVG_GA, "abbrev": "AVG"}}
 
     # ---------- 2. Tous les patineurs ----------
-    @st.cache_data(ttl=3600)
-    def fetch_skaters_for_season(season_id):
+    def skaters_from_stats_api(season_id):
         url = "[api.nhle.com](https://api.nhle.com/stats/rest/en/skater/summary)"
         params = {
-            "isAggregate": "false",
-            "isGame": "false",
-            "start": 0,
-            "limit": -1,  # -1 = TOUS les joueurs
+            "isAggregate": "false", "isGame": "false", "start": 0, "limit": -1,
             "sort": '[{"property":"points","direction":"DESC"}]',
             "cayenneExp": f"gameTypeId=2 and seasonId={season_id}",
         }
-        res = requests.get(url, params=params, headers=HEADERS, timeout=15)
+        res = requests.get(url, params=params, headers=HEADERS, timeout=20)
         res.raise_for_status()
         players = []
         for p in res.json().get("data", []):
-            name = p.get("skaterFullName")
-            if not name:
+            if not p.get("skaterFullName"):
                 continue
             players.append({
                 "id": p.get("playerId"),
-                "name": f"{name} ({p.get('teamAbbrevs') or 'NHL'})",
+                "name": f"{p['skaterFullName']} ({p.get('teamAbbrevs') or 'NHL'})",
                 "gamesPlayed": p.get("gamesPlayed") or 0,
                 "goals": p.get("goals") or 0,
                 "assists": p.get("assists") or 0,
@@ -849,29 +850,60 @@ with tab_nhl:
             })
         return players
 
+    def skaters_from_club_stats(season_id):
+        """Secours : un appel par équipe."""
+        by_id = {}
+        for abbr in TEAM_ABBREVS:
+            try:
+                url = f"[api-web.nhle.com](https://api-web.nhle.com/v1/club-stats/{abbr}/{season_id}/2)"
+                res = requests.get(url, headers=HEADERS, timeout=10)
+                if res.status_code != 200:
+                    continue
+                for p in res.json().get("skaters", []):
+                    first = p.get("firstName", {}).get("default", "")
+                    last = p.get("lastName", {}).get("default", "")
+                    gp = p.get("gamesPlayed") or 0
+                    pid = p.get("playerId")
+                    if pid in by_id and by_id[pid]["gamesPlayed"] >= gp:
+                        continue  # joueur échangé : on garde l'équipe où il a le plus joué
+                    by_id[pid] = {
+                        "id": pid,
+                        "name": f"{first} {last} ({abbr})",
+                        "gamesPlayed": gp,
+                        "goals": p.get("goals") or 0,
+                        "assists": p.get("assists") or 0,
+                        "points": p.get("points") or 0,
+                        "shots": p.get("shots") or 0,
+                        "ppPoints": (p.get("powerPlayGoals") or 0) * 2,  # approximation
+                    }
+            except Exception:
+                continue
+        return list(by_id.values())
+
     @st.cache_data(ttl=3600)
     def fetch_all_nhl_players():
+        """Lève une erreur si tout échoue -> l'échec n'est PAS mis en cache."""
+        errors = []
         season = current_season_id()
-        try:
-            players = fetch_skaters_for_season(season)
-            if len(players) > 300 and max(p["gamesPlayed"] for p in players) >= 5:
-                return players, season
-        except Exception:
-            pass
-        prev = previous_season_id(season)
-        try:
-            return fetch_skaters_for_season(prev), prev
-        except Exception:
-            return [], prev
+        for s in [season, previous_season_id(season)]:
+            for source in (skaters_from_stats_api, skaters_from_club_stats):
+                try:
+                    players = source(s)
+                    if len(players) > 300 and max(p["gamesPlayed"] for p in players) >= 5:
+                        return players, s
+                    errors.append(f"{source.__name__}({s}) : {len(players)} joueurs, trop peu de matchs")
+                except Exception as e:
+                    errors.append(f"{source.__name__}({s}) : {type(e).__name__} – {e}")
+        raise RuntimeError("\n".join(errors))
 
     # ---------- 3. Game logs ----------
     @st.cache_data(ttl=1800)
     def fetch_player_game_log(player_id, season_id):
         try:
             url = f"[api-web.nhle.com](https://api-web.nhle.com/v1/player/{player_id}/game-log/{season_id}/2)"
-            res = requests.get(url, headers=HEADERS, timeout=8)
+            res = requests.get(url, headers=HEADERS, timeout=10)
             if res.status_code == 200:
-                return res.json().get("gameLog", [])
+                return res.json().get("gameLog", [])  # du plus récent au plus ancien
         except Exception:
             pass
         return []
@@ -893,12 +925,12 @@ with tab_nhl:
             return season_rate, season_rate, 0
         n = len(logs)
         recent_rate = sum(g.get(key, 0) for g in logs) / n
-        w = n / (n + 15)
+        w = n / (n + 15)  # 5 matchs -> 25 % de poids, 20 matchs -> 57 %
         return w * recent_rate + (1 - w) * season_rate, recent_rate, n
 
     def adjust_lambda(lam, opp_ga, is_pp1, opp_pk, home_away):
         lam *= (opp_ga / LEAGUE_AVG_GA) ** 0.8
-        lam *= 1 + max(0.0, (80.0 - opp_pk) / 100) if is_pp1 else 0.92
+        lam *= (1 + max(0.0, (80.0 - opp_pk) / 100)) if is_pp1 else 0.92
         if home_away == "Domicile":
             lam *= 1.04
         elif home_away == "Extérieur":
@@ -906,64 +938,74 @@ with tab_nhl:
         return max(lam, 0.001)
 
     # ---------- 5. Interface ----------
-    players_list, season_used = fetch_all_nhl_players()
+    try:
+        players_list, season_used = fetch_all_nhl_players()
+    except Exception as e:
+        players_list, season_used = [], None
+        st.error("Impossible de charger les joueurs depuis l'API NHL.")
+        st.code(str(e))  # affiche la vraie cause
+
     teams_dict = fetch_nhl_teams_standings()
 
-    if not players_list:
-        st.error("Impossible de charger les joueurs depuis l'API NHL. Réessaie plus tard.")
-    else:
+    if players_list:
         st.caption(f"{len(players_list)} patineurs chargés, saison "
                    f"{str(season_used)[:4]}-{str(season_used)[4:]}")
 
         min_gp = st.slider("Matchs joués minimum", 0, 40, 5)
         player_dict = {p["name"]: p for p in players_list if p["gamesPlayed"] >= min_gp}
 
-        col1, col2 = st.columns(2)
-        with col1:
-            label = st.selectbox("Joueur (tape pour chercher)", sorted(player_dict))
-            player = player_dict[label]
-            period = st.selectbox("Forme récente", ["5 derniers matchs", "10 derniers matchs",
-                                                    "20 derniers matchs", "Saison"], index=1)
-            prop = st.radio("Pari", ["Point", "But", "Passe"], horizontal=True)
-            home_away = st.radio("Lieu", ["Tout", "Domicile", "Extérieur"], horizontal=True)
-
-        with col2:
-            st.markdown("### 📊 Adversaire & cote")
-            opp = st.selectbox("Équipe adverse", list(teams_dict))
-            opp_ga = teams_dict[opp]["ga_g"]
-            st.info(f"🛡️ {opp} : **{opp_ga} buts alloués / match**")
-            opp_pk = st.slider("PK% adverse", 60.0, 90.0, 79.0, step=0.5)
-            is_pp1 = st.checkbox("Joueur sur le PP1",
-                                 value=player["ppPoints"] / max(player["gamesPlayed"], 1) > 0.25)
-            odds = st.number_input("Cote du bookmaker (décimale)", 1.01, 50.0, 2.00, step=0.05)
-
-        logs = filter_logs(fetch_player_game_log(player["id"], season_used), period, home_away)
-        base, recent, n = expected_rate(player, logs, prop)
-        lam = adjust_lambda(base, opp_ga, is_pp1, opp_pk, home_away)
-        p_model = 1 - math.exp(-lam)
-        p_book = 1 / odds
-        ev = p_model * odds - 1
-        kelly = max(0.0, ev / (odds - 1)) * 0.25
-
-        st.markdown("---")
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric(f"{prop}s / match (récent, {n} m.)", f"{recent:.2f}")
-        c2.metric("λ ajusté", f"{lam:.2f}")
-        c3.metric(f"Proba 1+ {prop}", f"{p_model:.1%}", f"{(p_model - p_book) * 100:+.1f} pts vs cote")
-        c4.metric("EV par 1 € misé", f"{ev:+.2f} €")
-        st.caption(f"Proba implicite de la cote : {p_book:.1%} · Cote juste selon le modèle : {1 / p_model:.2f}")
-
-        if ev >= 0.08:
-            st.success(f"🔥 **Value forte** : {label} 1+ {prop} à {odds}. Mise ≈ {kelly:.1%} de la bankroll.")
-        elif ev > 0:
-            st.info(f"🟡 **Légère value** : EV {ev:+.1%}. Mise ≈ {kelly:.1%} de la bankroll.")
+        if not player_dict:
+            st.warning("Aucun joueur avec ce nombre minimum de matchs.")
         else:
-            st.error(f"⚠️ **Pas de value** : il faudrait une cote ≥ {1 / p_model:.2f}.")
+            col1, col2 = st.columns(2)
+            with col1:
+                label = st.selectbox("Joueur (tape pour chercher)", sorted(player_dict))
+                player = player_dict[label]
+                period = st.selectbox("Forme récente", ["5 derniers matchs", "10 derniers matchs",
+                                                        "20 derniers matchs", "Saison"], index=1)
+                prop = st.radio("Pari", ["Point", "But", "Passe"], horizontal=True)
+                home_away = st.radio("Lieu", ["Tout", "Domicile", "Extérieur"], horizontal=True)
 
-        if logs:
-            with st.expander("Derniers matchs"):
-                st.dataframe([{
-                    "Date": g.get("gameDate"), "Adv.": g.get("opponentAbbrev"),
-                    "Lieu": g.get("homeRoadFlag"), "B": g.get("goals"), "A": g.get("assists"),
-                    "Pts": g.get("points"), "Tirs": g.get("shots"), "TOI": g.get("toi"),
-                } for g in logs], use_container_width=True)
+            with col2:
+                st.markdown("### 📊 Adversaire & cote")
+                opp = st.selectbox("Équipe adverse", list(teams_dict))
+                opp_ga = teams_dict[opp]["ga_g"]
+                st.info(f"🛡️ {opp} : **{opp_ga} buts alloués / match**")
+                opp_pk = st.slider("PK% adverse", 60.0, 90.0, 79.0, step=0.5)
+                is_pp1 = st.checkbox("Joueur sur le PP1",
+                                     value=player["ppPoints"] / max(player["gamesPlayed"], 1) > 0.25)
+                odds = st.number_input("Cote du bookmaker (décimale)", 1.01, 50.0, 2.00, step=0.05)
+
+            logs = filter_logs(fetch_player_game_log(player["id"], season_used), period, home_away)
+            base, recent, n = expected_rate(player, logs, prop)
+            lam = adjust_lambda(base, opp_ga, is_pp1, opp_pk, home_away)
+            p_model = 1 - math.exp(-lam)
+            p_book = 1 / odds
+            ev = p_model * odds - 1
+            kelly = max(0.0, ev / (odds - 1)) * 0.25  # Kelly 1/4
+
+            st.markdown("---")
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric(f"{prop}s / match (récent, {n} m.)", f"{recent:.2f}")
+            c2.metric("λ ajusté", f"{lam:.2f}")
+            c3.metric(f"Proba 1+ {prop}", f"{p_model:.1%}",
+                      f"{(p_model - p_book) * 100:+.1f} pts vs cote")
+            c4.metric("EV par 1 € misé", f"{ev:+.2f} €")
+            st.caption(f"Proba implicite de la cote : {p_book:.1%} · "
+                       f"Cote juste selon le modèle : {1 / p_model:.2f}")
+
+            if ev >= 0.08:
+                st.success(f"🔥 **Value forte** : {label} 1+ {prop} à {odds}. "
+                           f"Mise ≈ {kelly:.1%} de la bankroll.")
+            elif ev > 0:
+                st.info(f"🟡 **Légère value** : EV {ev:+.1%}. Mise ≈ {kelly:.1%} de la bankroll.")
+            else:
+                st.error(f"⚠️ **Pas de value** : il faudrait une cote ≥ {1 / p_model:.2f}.")
+
+            if logs:
+                with st.expander("Derniers matchs"):
+                    st.dataframe([{
+                        "Date": g.get("gameDate"), "Adv.": g.get("opponentAbbrev"),
+                        "Lieu": g.get("homeRoadFlag"), "B": g.get("goals"), "A": g.get("assists"),
+                        "Pts": g.get("points"), "Tirs": g.get("shots"), "TOI": g.get("toi"),
+                    } for g in logs], use_container_width=True)
