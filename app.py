@@ -777,6 +777,10 @@ with tab_nhl:
                       "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "application/json",
     }
+    # Adresses construites en morceaux pour éviter qu'un copier-coller les transforme en liens
+    API_WEB = "https://" + "api-web.nhle" + ".com/v1"
+    API_STATS = "https://" + "api.nhle" + ".com/stats/rest/en"
+
     LEAGUE_AVG_GA = 3.05
     STAT_KEY = {"Point": "points", "But": "goals", "Passe": "assists"}
     TEAM_ABBREVS = ["ANA", "BOS", "BUF", "CGY", "CAR", "CHI", "COL", "CBJ", "DAL", "DET",
@@ -814,10 +818,10 @@ with tab_nhl:
             return teams
 
         try:
-            teams = parse("[api-web.nhle.com](https://api-web.nhle.com/v1/standings/now)")
+            teams = parse(f"{API_WEB}/standings/now")
             if not teams:  # début de saison -> classement final de la saison précédente
                 end_year = str(previous_season_id(current_season_id()))[4:]
-                teams = parse(f"[api-web.nhle.com](https://api-web.nhle.com/v1/standings/{end_year}-04-15)")
+                teams = parse(f"{API_WEB}/standings/{end_year}-04-15")
             if teams:
                 return dict(sorted(teams.items()))
         except Exception:
@@ -826,7 +830,7 @@ with tab_nhl:
 
     # ---------- 2. Tous les patineurs ----------
     def skaters_from_stats_api(season_id):
-        url = "[api.nhle.com](https://api.nhle.com/stats/rest/en/skater/summary)"
+        url = f"{API_STATS}/skater/summary"
         params = {
             "isAggregate": "false", "isGame": "false", "start": 0, "limit": -1,
             "sort": '[{"property":"points","direction":"DESC"}]',
@@ -855,7 +859,7 @@ with tab_nhl:
         by_id = {}
         for abbr in TEAM_ABBREVS:
             try:
-                url = f"[api-web.nhle.com](https://api-web.nhle.com/v1/club-stats/{abbr}/{season_id}/2)"
+                url = f"{API_WEB}/club-stats/{abbr}/{season_id}/2"
                 res = requests.get(url, headers=HEADERS, timeout=10)
                 if res.status_code != 200:
                     continue
@@ -893,14 +897,14 @@ with tab_nhl:
                         return players, s
                     errors.append(f"{source.__name__}({s}) : {len(players)} joueurs, trop peu de matchs")
                 except Exception as e:
-                    errors.append(f"{source.__name__}({s}) : {type(e).__name__} – {e}")
+                    errors.append(f"{source.__name__}({s}) : {type(e).__name__} - {e}")
         raise RuntimeError("\n".join(errors))
 
     # ---------- 3. Game logs ----------
     @st.cache_data(ttl=1800)
     def fetch_player_game_log(player_id, season_id):
         try:
-            url = f"[api-web.nhle.com](https://api-web.nhle.com/v1/player/{player_id}/game-log/{season_id}/2)"
+            url = f"{API_WEB}/player/{player_id}/game-log/{season_id}/2"
             res = requests.get(url, headers=HEADERS, timeout=10)
             if res.status_code == 200:
                 return res.json().get("gameLog", [])  # du plus récent au plus ancien
