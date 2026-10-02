@@ -772,10 +772,17 @@ with tab_nhl:
     @st.cache_data(ttl=3600)
     def fetch_nhl_leaders():
         try:
-            res = requests.get("https://api-web.nhle.com/v1/skater-stats-leaders/current?categories=points&limit=50", timeout=10)
+            # En-tête User-Agent indispensable pour ne pas être bloqué
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+            
+            # Endpoint officiel NHL actif
+            url = "https://api-web.nhle.com/v1/skater-stats-leaders/20252026/2?categories=points&limit=50"
+            
+            res = requests.get(url, headers=headers, timeout=10)
             if res.status_code == 200:
-                return res.json().get('points', [])
-        except Exception:
+                data = res.json()
+                return data.get('points', []) or data.get('data', [])
+        except Exception as e:
             pass
         return []
 
