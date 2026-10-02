@@ -770,7 +770,8 @@ with tab_tennis:
 with tab_nhl:
     st.markdown("<h2 style='text-align:center;color:#a855f7;'>🏒 NHL Player Props Analyzer</h2>",
                 unsafe_allow_html=True)
-    st.caption("Modèle de Poisson : forme récente + saison, adversaire, PP1, PK et lieu du match")
+    st.caption("Modèle de Poisson : forme récente (toutes saisons) + saison en cours "
+               "stabilisée par la saison précédente, adversaire, PP1, PK et lieu")
 
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -782,7 +783,9 @@ with tab_nhl:
     API_STATS = "https://" + "api.nhle" + ".com/stats/rest/en"
 
     LEAGUE_AVG_GA = 3.05
+    PRIOR_GAMES = 20  # poids de la saison précédente, en "matchs équivalents"
     STAT_KEY = {"Point": "points", "But": "goals", "Passe": "assists"}
+    STATS = ["goals", "assists", "points", "shots", "ppPoints"]
     TEAM_ABBREVS = ["ANA", "BOS", "BUF", "CGY", "CAR", "CHI", "COL", "CBJ", "DAL", "DET",
                     "EDM", "FLA", "LAK", "MIN", "MTL", "NSH", "NJD", "NYI", "NYR", "OTT",
                     "PHI", "PIT", "SJS", "SEA", "STL", "TBL", "TOR", "UTA", "VAN", "VGK",
@@ -798,35 +801,46 @@ with tab_nhl:
         start = int(str(season_id)[:4]) - 1
         return int(f"{start}{start + 1}")
 
+    def season_label(s):
+        return f"{str(s)[:4]}-{str(s)[4:]}"
+
     # ---------- 1. Classement / buts alloués ----------
     @st.cache_data(ttl=3600)
     def fetch_nhl_teams_standings():
         def parse(url):
             res = requests.get(url, headers=HEADERS, timeout=10)
             res.raise_for_status()
-            teams = {}
+            rows = {}
             for t in res.json().get("standings", []):
-                gp = t.get("gamesPlayed", 0)
-                if gp < 5:
-                    return {}
                 name = t.get("teamName", {}).get("default", "Inconnu")
                 abbrev = t.get("teamAbbrev", {}).get("default", "")
-                teams[f"{name} ({abbrev})"] = {
-                    "ga_g": round(t.get("goalAgainst", 0) / gp, 2),
-                    "abbrev": abbrev,
-                }
-            return teams
+                rows[abbrev] = {"name": f"{name} ({abbrev})",
+                                "gp": t.get("gamesPlayed", 0) or 0,
+                                "ga": t.get("goalAgainst", 0) or 0}
+            return rows
 
         try:
-            teams = parse(f"{API_WEB}/standings/now")
-            if not teams:  # début de saison -> classement final de la saison précédente
-                end_year = str(previous_season_id(current_season_id()))[4:]
-                teams = parse(f"{API_WEB}/standings/{end_year}-04-15")
+            cur = parse(f"{API_WEB}/standings/now")
+            end_year = str(previous_season_id(current_season_id()))[4:]
+            try:
+                prev = parse(f"{API_WEB}/standings/{end_year}-04-15")
+            except Exception:
+                prev = {}
+            teams = {}
+            for abbr, c in cur.items():
+                p = prev.get(abbr)
+                if p and p["gp"]:
+                    prior = p["ga"] / p["gp"]
+                    ga_g = (c["ga"] + PRIOR_GAMES * prior) / (c["gp"] + PRIOR_GAMES)
+                else:
+                    ga_g = c["ga"] / c["gp"] if c["gp"] else LEAGUE_AVG_GA
+                teams[c["name"]] = {"ga_g": round(ga_g, 2), "abbrev": abbr,
+                                    "gp_cur": c["gp"]}
             if teams:
                 return dict(sorted(teams.items()))
         except Exception:
             pass
-        return {"Adversaire moyen": {"ga_g": LEAGUE_AVG_GA, "abbrev": "AVG"}}
+        return {"Adversaire moyen": {"ga_g": LEAGUE_AVG_GA, "abbrev": "AVG", "gp_cur": 0}}
 
     # ---------- 2. Tous les patineurs ----------
     def skaters_from_stats_api(season_id):
@@ -842,9 +856,11 @@ with tab_nhl:
         for p in res.json().get("data", []):
             if not p.get("skaterFullName"):
                 continue
+            team = (p.get("teamAbbrevs") or "NHL").split(",")[-1].strip()
             players.append({
                 "id": p.get("playerId"),
-                "name": f"{p['skaterFullName']} ({p.get('teamAbbrevs') or 'NHL'})",
+                "fullName": p["skaterFullName"],
+                "team": team,
                 "gamesPlayed": p.get("gamesPlayed") or 0,
                 "goals": p.get("goals") or 0,
                 "assists": p.get("assists") or 0,
@@ -869,10 +885,9 @@ with tab_nhl:
                     gp = p.get("gamesPlayed") or 0
                     pid = p.get("playerId")
                     if pid in by_id and by_id[pid]["gamesPlayed"] >= gp:
-                        continue  # joueur échangé : on garde l'équipe où il a le plus joué
+                        continue
                     by_id[pid] = {
-                        "id": pid,
-                        "name": f"{first} {last} ({abbr})",
+                        "id": pid, "fullName": f"{first} {last}", "team": abbr,
                         "gamesPlayed": gp,
                         "goals": p.get("goals") or 0,
                         "assists": p.get("assists") or 0,
@@ -884,33 +899,61 @@ with tab_nhl:
                 continue
         return list(by_id.values())
 
-    @st.cache_data(ttl=3600)
-    def fetch_all_nhl_players():
-        """Lève une erreur si tout échoue -> l'échec n'est PAS mis en cache."""
+    def load_season(season_id):
         errors = []
-        season = current_season_id()
-        for s in [season, previous_season_id(season)]:
-            for source in (skaters_from_stats_api, skaters_from_club_stats):
-                try:
-                    players = source(s)
-                    if len(players) > 300 and max(p["gamesPlayed"] for p in players) >= 5:
-                        return players, s
-                    errors.append(f"{source.__name__}({s}) : {len(players)} joueurs, trop peu de matchs")
-                except Exception as e:
-                    errors.append(f"{source.__name__}({s}) : {type(e).__name__} - {e}")
-        raise RuntimeError("\n".join(errors))
+        for source in (skaters_from_stats_api, skaters_from_club_stats):
+            try:
+                players = source(season_id)
+                if players:
+                    return players, errors
+                errors.append(f"{source.__name__}({season_id}) : 0 joueur")
+            except Exception as e:
+                errors.append(f"{source.__name__}({season_id}) : {type(e).__name__} - {e}")
+        return [], errors
 
-    # ---------- 3. Game logs ----------
     @st.cache_data(ttl=1800)
+    def fetch_all_nhl_players():
+        """Fusionne saison en cours + saison précédente pour chaque joueur."""
+        cur_s = current_season_id()
+        prev_s = previous_season_id(cur_s)
+        cur, err1 = load_season(cur_s)
+        prev, err2 = load_season(prev_s)
+        if not cur and not prev:
+            raise RuntimeError("\n".join(err1 + err2))
+
+        merged = {}
+        for p in prev:
+            merged[p["id"]] = {"id": p["id"], "fullName": p["fullName"], "team": p["team"],
+                               "prev_gp": p["gamesPlayed"], "cur_gp": 0,
+                               **{f"prev_{k}": p[k] for k in STATS},
+                               **{f"cur_{k}": 0 for k in STATS}}
+        for p in cur:  # la saison en cours écrase l'équipe (transferts de l'été)
+            m = merged.setdefault(p["id"], {"id": p["id"], "prev_gp": 0,
+                                            **{f"prev_{k}": 0 for k in STATS}})
+            m.update({"fullName": p["fullName"], "team": p["team"], "cur_gp": p["gamesPlayed"],
+                      **{f"cur_{k}": p[k] for k in STATS}})
+        for m in merged.values():
+            m["name"] = f"{m['fullName']} ({m['team']})"
+        return list(merged.values()), cur_s, prev_s, len(cur) > 0
+
+    # ---------- 3. Game logs (saison en cours puis précédente) ----------
+    @st.cache_data(ttl=900)
     def fetch_player_game_log(player_id, season_id):
         try:
             url = f"{API_WEB}/player/{player_id}/game-log/{season_id}/2"
             res = requests.get(url, headers=HEADERS, timeout=10)
             if res.status_code == 200:
-                return res.json().get("gameLog", [])  # du plus récent au plus ancien
+                logs = res.json().get("gameLog", [])
+                for g in logs:
+                    g["season"] = season_label(season_id)
+                return logs
         except Exception:
             pass
         return []
+
+    def combined_logs(player_id, cur_s, prev_s):
+        logs = fetch_player_game_log(player_id, cur_s) + fetch_player_game_log(player_id, prev_s)
+        return sorted(logs, key=lambda g: g.get("gameDate", ""), reverse=True)
 
     def filter_logs(logs, period, home_away):
         if home_away == "Domicile":
@@ -922,15 +965,23 @@ with tab_nhl:
         return logs
 
     # ---------- 4. Modèle ----------
+    def season_rate(player, key):
+        """Saison en cours, stabilisée par la saison précédente (moyenne bayésienne)."""
+        cur_gp, prev_gp = player["cur_gp"], player["prev_gp"]
+        if prev_gp > 0:
+            prior = player[f"prev_{key}"] / prev_gp
+            return (player[f"cur_{key}"] + PRIOR_GAMES * prior) / (cur_gp + PRIOR_GAMES)
+        return player[f"cur_{key}"] / cur_gp if cur_gp else 0.0
+
     def expected_rate(player, logs, prop):
         key = STAT_KEY[prop]
-        season_rate = player[key] / max(player["gamesPlayed"], 1)
+        base = season_rate(player, key)
         if not logs:
-            return season_rate, season_rate, 0
+            return base, base, 0
         n = len(logs)
-        recent_rate = sum(g.get(key, 0) for g in logs) / n
-        w = n / (n + 15)  # 5 matchs -> 25 % de poids, 20 matchs -> 57 %
-        return w * recent_rate + (1 - w) * season_rate, recent_rate, n
+        recent = sum(g.get(key, 0) for g in logs) / n
+        w = n / (n + 15)
+        return w * recent + (1 - w) * base, recent, n
 
     def adjust_lambda(lam, opp_ga, is_pp1, opp_pk, home_away):
         lam *= (opp_ga / LEAGUE_AVG_GA) ** 0.8
@@ -943,20 +994,30 @@ with tab_nhl:
 
     # ---------- 5. Interface ----------
     try:
-        players_list, season_used = fetch_all_nhl_players()
+        players_list, cur_s, prev_s, has_cur = fetch_all_nhl_players()
     except Exception as e:
-        players_list, season_used = [], None
+        players_list = []
         st.error("Impossible de charger les joueurs depuis l'API NHL.")
-        st.code(str(e))  # affiche la vraie cause
+        st.code(str(e))
 
     teams_dict = fetch_nhl_teams_standings()
 
     if players_list:
-        st.caption(f"{len(players_list)} patineurs chargés, saison "
-                   f"{str(season_used)[:4]}-{str(season_used)[4:]}")
+        if has_cur:
+            st.caption(f"{len(players_list)} patineurs · saison {season_label(cur_s)} "
+                       f"(stabilisée par {season_label(prev_s)})")
+        else:
+            st.warning(f"Aucun match de saison régulière {season_label(cur_s)} disponible pour "
+                       f"l'instant : stats {season_label(prev_s)} utilisées. Elles basculeront "
+                       f"automatiquement dès les premiers matchs.")
 
-        min_gp = st.slider("Matchs joués minimum", 0, 40, 5)
-        player_dict = {p["name"]: p for p in players_list if p["gamesPlayed"] >= min_gp}
+        if st.button("🔄 Rafraîchir les stats"):
+            st.cache_data.clear()
+            st.rerun()
+
+        min_gp = st.slider("Matchs joués minimum (2 saisons)", 0, 40, 5)
+        player_dict = {p["name"]: p for p in players_list
+                       if p["cur_gp"] + p["prev_gp"] >= min_gp}
 
         if not player_dict:
             st.warning("Aucun joueur avec ce nombre minimum de matchs.")
@@ -965,6 +1026,9 @@ with tab_nhl:
             with col1:
                 label = st.selectbox("Joueur (tape pour chercher)", sorted(player_dict))
                 player = player_dict[label]
+                st.caption(f"{season_label(cur_s)} : {player['cur_gp']} m., "
+                           f"{player['cur_points']} pts · {season_label(prev_s)} : "
+                           f"{player['prev_gp']} m., {player['prev_points']} pts")
                 period = st.selectbox("Forme récente", ["5 derniers matchs", "10 derniers matchs",
                                                         "20 derniers matchs", "Saison"], index=1)
                 prop = st.radio("Pari", ["Point", "But", "Passe"], horizontal=True)
@@ -974,19 +1038,26 @@ with tab_nhl:
                 st.markdown("### 📊 Adversaire & cote")
                 opp = st.selectbox("Équipe adverse", list(teams_dict))
                 opp_ga = teams_dict[opp]["ga_g"]
-                st.info(f"🛡️ {opp} : **{opp_ga} buts alloués / match**")
+                st.info(f"🛡️ {opp} : **{opp_ga} buts alloués / match** "
+                        f"({teams_dict[opp]['gp_cur']} m. cette saison)")
                 opp_pk = st.slider("PK% adverse", 60.0, 90.0, 79.0, step=0.5)
-                is_pp1 = st.checkbox("Joueur sur le PP1",
-                                     value=player["ppPoints"] / max(player["gamesPlayed"], 1) > 0.25)
+                pp_rate = (player["cur_ppPoints"] + player["prev_ppPoints"]) / \
+                          max(player["cur_gp"] + player["prev_gp"], 1)
+                is_pp1 = st.checkbox("Joueur sur le PP1", value=pp_rate > 0.25)
                 odds = st.number_input("Cote du bookmaker (décimale)", 1.01, 50.0, 2.00, step=0.05)
 
-            logs = filter_logs(fetch_player_game_log(player["id"], season_used), period, home_away)
+            all_logs = combined_logs(player["id"], cur_s, prev_s)
+            if period == "Saison":  # "Saison" = saison en cours seulement (si elle a commencé)
+                cur_only = [g for g in all_logs if g["season"] == season_label(cur_s)]
+                all_logs = cur_only or all_logs
+            logs = filter_logs(all_logs, period, home_away)
+
             base, recent, n = expected_rate(player, logs, prop)
             lam = adjust_lambda(base, opp_ga, is_pp1, opp_pk, home_away)
             p_model = 1 - math.exp(-lam)
             p_book = 1 / odds
             ev = p_model * odds - 1
-            kelly = max(0.0, ev / (odds - 1)) * 0.25  # Kelly 1/4
+            kelly = max(0.0, ev / (odds - 1)) * 0.25
 
             st.markdown("---")
             c1, c2, c3, c4 = st.columns(4)
@@ -995,8 +1066,10 @@ with tab_nhl:
             c3.metric(f"Proba 1+ {prop}", f"{p_model:.1%}",
                       f"{(p_model - p_book) * 100:+.1f} pts vs cote")
             c4.metric("EV par 1 € misé", f"{ev:+.2f} €")
-            st.caption(f"Proba implicite de la cote : {p_book:.1%} · "
-                       f"Cote juste selon le modèle : {1 / p_model:.2f}")
+            if logs:
+                st.caption(f"Forme calculée du {logs[-1].get('gameDate')} au "
+                           f"{logs[0].get('gameDate')} · Proba implicite : {p_book:.1%} · "
+                           f"Cote juste : {1 / p_model:.2f}")
 
             if ev >= 0.08:
                 st.success(f"🔥 **Value forte** : {label} 1+ {prop} à {odds}. "
@@ -1007,9 +1080,10 @@ with tab_nhl:
                 st.error(f"⚠️ **Pas de value** : il faudrait une cote ≥ {1 / p_model:.2f}.")
 
             if logs:
-                with st.expander("Derniers matchs"):
+                with st.expander("Matchs utilisés pour la forme"):
                     st.dataframe([{
-                        "Date": g.get("gameDate"), "Adv.": g.get("opponentAbbrev"),
-                        "Lieu": g.get("homeRoadFlag"), "B": g.get("goals"), "A": g.get("assists"),
-                        "Pts": g.get("points"), "Tirs": g.get("shots"), "TOI": g.get("toi"),
+                        "Saison": g.get("season"), "Date": g.get("gameDate"),
+                        "Adv.": g.get("opponentAbbrev"), "Lieu": g.get("homeRoadFlag"),
+                        "B": g.get("goals"), "A": g.get("assists"), "Pts": g.get("points"),
+                        "Tirs": g.get("shots"), "TOI": g.get("toi"),
                     } for g in logs], use_container_width=True)
