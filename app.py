@@ -789,35 +789,45 @@ with tab_nhl:
             pass
         return {"Adversaire Moyen (3.10 GA/G)": {'ga_g': 3.10, 'abbrev': 'DEF'}}
 
-    # 2. Récupération de TOUS les joueurs NHL via l'API REST officielle
+    # 2. Récupération de l'intégralité des joueurs NHL via API REST
     @st.cache_data(ttl=3600)
     def fetch_all_nhl_players():
-        all_players = []
-        # Fallback multi-endpoints pour ne jamais renvoyer une liste vide
         try:
-            # Endpoint 1 : Top 100 API web
-            res1 = requests.get("https://api-web.nhle.com/v1/skater-stats-leaders/current?categories=points&limit=100", headers=HEADERS, timeout=5)
-            if res1.status_code == 200:
-                data1 = res1.json().get('points', [])
-                if data1:
-                    all_players.extend(data1)
+            # Endpoint REST qui extrait toute la ligue (500+ patineurs)
+            url = "https://api.nhle.com/stats/rest/en/skater/summary?limit=-1&cayenneExp=seasonId=20242025%20and%20gameTypeId=2"
+            res = requests.get(url, headers=HEADERS, timeout=10)
+            if res.status_code == 200:
+                raw_data = res.json().get('data', [])
+                formatted_players = []
+                for p in raw_data:
+                    formatted_players.append({
+                        "id": p.get("playerId"),
+                        "firstName": {"default": p.get("skaterFullName", "").split()[0]},
+                        "lastName": {"default": " ".join(p.get("skaterFullName", "").split()[1:])},
+                        "teamAbbrev": p.get("teamAbbrevs", "NHL"),
+                        "shots": p.get("shots", 0),
+                        "points": p.get("points", 0),
+                        "goals": p.get("goals", 0),
+                        "assists": p.get("assists", 0),
+                        "gamesPlayed": max(p.get("gamesPlayed", 1), 1)
+                    })
+                if formatted_players:
+                    return formatted_players
         except Exception:
             pass
 
-        if not all_players:
-            # Fallback de secours (Joueurs stars)
-            all_players = [
-                {"id": 8478402, "firstName": {"default": "Connor"}, "lastName": {"default": "McDavid"}, "shots": 260, "points": 132, "gamesPlayed": 80, "teamAbbrev": "EDM"},
-                {"id": 8477934, "firstName": {"default": "Leon"}, "lastName": {"default": "Draisaitl"}, "shots": 220, "points": 106, "gamesPlayed": 81, "teamAbbrev": "EDM"},
-                {"id": 8479318, "firstName": {"default": "Auston"}, "lastName": {"default": "Matthews"}, "shots": 330, "points": 107, "gamesPlayed": 81, "teamAbbrev": "TOR"},
-                {"id": 8477493, "firstName": {"default": "Nathan"}, "lastName": {"default": "MacKinnon"}, "shots": 340, "points": 140, "gamesPlayed": 82, "teamAbbrev": "COL"},
-                {"id": 8480069, "firstName": {"default": "Cale"}, "lastName": {"default": "Makar"}, "shots": 230, "points": 90, "gamesPlayed": 77, "teamAbbrev": "COL"},
-                {"id": 8476453, "firstName": {"default": "Nikita"}, "lastName": {"default": "Kucherov"}, "shots": 300, "points": 144, "gamesPlayed": 81, "teamAbbrev": "TBL"},
-                {"id": 8477492, "firstName": {"default": "David"}, "lastName": {"default": "Pastrnak"}, "shots": 380, "points": 110, "gamesPlayed": 82, "teamAbbrev": "BOS"}
-            ]
-        return all_players
+        # Fallback de secours si échec réseau
+        return [
+            {"id": 8478402, "firstName": {"default": "Connor"}, "lastName": {"default": "McDavid"}, "shots": 260, "points": 132, "goals": 32, "assists": 100, "gamesPlayed": 80, "teamAbbrev": "EDM"},
+            {"id": 8477934, "firstName": {"default": "Leon"}, "lastName": {"default": "Draisaitl"}, "shots": 220, "points": 106, "goals": 41, "assists": 65, "gamesPlayed": 81, "teamAbbrev": "EDM"},
+            {"id": 8479318, "firstName": {"default": "Auston"}, "lastName": {"default": "Matthews"}, "shots": 330, "points": 107, "goals": 69, "assists": 38, "gamesPlayed": 81, "teamAbbrev": "TOR"},
+            {"id": 8477493, "firstName": {"default": "Nathan"}, "lastName": {"default": "MacKinnon"}, "shots": 340, "points": 140, "goals": 51, "assists": 89, "gamesPlayed": 82, "teamAbbrev": "COL"},
+            {"id": 8480069, "firstName": {"default": "Cale"}, "lastName": {"default": "Makar"}, "shots": 230, "points": 90, "goals": 21, "assists": 69, "gamesPlayed": 77, "teamAbbrev": "COL"},
+            {"id": 8476453, "firstName": {"default": "Nikita"}, "lastName": {"default": "Kucherov"}, "shots": 300, "points": 144, "goals": 44, "assists": 100, "gamesPlayed": 81, "teamAbbrev": "TBL"},
+            {"id": 8477492, "firstName": {"default": "David"}, "lastName": {"default": "Pastrnak"}, "shots": 380, "points": 110, "goals": 47, "assists": 63, "gamesPlayed": 82, "teamAbbrev": "BOS"}
+        ]
 
-    # 3. Récupération des logs de match (Forme sur 5, 10, 20 matchs)
+    # 3. Game Logs pour analyse par période
     @st.cache_data(ttl=1800)
     def fetch_player_game_log(player_id, limit_games):
         try:
@@ -833,11 +843,11 @@ with tab_nhl:
             pass
         return []
 
-    # Exécution
+    # Exécution des requêtes
     leaders = fetch_all_nhl_players()
     teams_dict = fetch_nhl_teams_standings()
 
-    # Dictionnaire de joueurs triés
+    # Dictionnaire de tous les joueurs triés
     player_dict = {f"{p['firstName']['default']} {p['lastName']['default']} ({p.get('teamAbbrev', 'NHL')})": p for p in leaders}
     sorted_player_names = sorted(list(player_dict.keys()))
 
@@ -860,28 +870,39 @@ with tab_nhl:
         opp_pk_pct = st.slider("Efficacité Penalty Kill Adverse (PK%)", 60.0, 90.0, 77.0, step=0.5)
         is_pp1 = st.checkbox("Le joueur évolue sur le PP1", value=True)
 
-    # Calcul dynamique selon la période
+    # Calcul dynamique des statistiques selon la période sélectionnée
     game_logs = fetch_player_game_log(p_id, period)
 
     if game_logs:
         num_g = len(game_logs)
         tot_shots = sum(g.get('shots', 0) for g in game_logs)
         tot_points = sum(g.get('points', 0) for g in game_logs)
+        tot_goals = sum(g.get('goals', 0) for g in game_logs)
+        tot_assists = sum(g.get('assists', 0) for g in game_logs)
+
         sog_pg = tot_shots / num_g
         pts_pg = tot_points / num_g
+        goals_pg = tot_goals / num_g
+        assists_pg = tot_assists / num_g
     else:
         games = max(selected_player.get('gamesPlayed', 1), 1)
         sog_pg = selected_player.get('shots', 0) / games
         pts_pg = selected_player.get('points', 0) / games
+        goals_pg = selected_player.get('goals', 0) / games
+        assists_pg = selected_player.get('assists', 0) / games
 
-    # Algorithme de scoring
+    # Algorithme de scoring dynamique
     score = 50.0
     if is_pp1: score += 12.0
 
     if target_prop == "But":
         if sog_pg >= 3.5: score += 15.0
         elif sog_pg >= 2.5: score += 8.0
-    elif target_prop in ["Passe", "Point"]:
+        if goals_pg >= 0.5: score += 10.0
+    elif target_prop == "Passe":
+        if assists_pg >= 0.7: score += 15.0
+        elif assists_pg >= 0.4: score += 8.0
+    elif target_prop == "Point":
         if pts_pg >= 0.9: score += 15.0
         elif pts_pg >= 0.6: score += 8.0
 
@@ -896,13 +917,25 @@ with tab_nhl:
 
     st.markdown("---")
     c1, c2, c3 = st.columns(3)
-    c1.metric(f"Moyenne Tirs ({period})", f"{round(sog_pg, 2)}")
-    c2.metric(f"Moyenne Points ({period})", f"{round(pts_pg, 2)}")
-    c3.metric(f"Score Confiance : {target_prop}", f"{score}%")
+    
+    # Adaptation dynamique des cartes métriques selon le type de pari (Prop)
+    with c1:
+        st.metric(f"Moyenne Tirs ({period})", f"{round(sog_pg, 2)}")
+    
+    with c2:
+        if target_prop == "But":
+            st.metric(f"Moyenne Buts ({period})", f"{round(goals_pg, 2)}")
+        elif target_prop == "Passe":
+            st.metric(f"Moyenne Passes ({period})", f"{round(assists_pg, 2)}")
+        else:
+            st.metric(f"Moyenne Points ({period})", f"{round(pts_pg, 2)}")
+            
+    with c3:
+        st.metric(f"Score Confiance : {target_prop}", f"{score}%")
 
     if score >= 70:
         st.success(f"🔥 **ValueBet Forte** : {selected_player_label} pour 1+ {target_prop}.")
     elif score >= 55:
         st.info(f"🟡 **Opportunité Modérée** : {selected_player_label} pour 1+ {target_prop}.")
     else:
-        st.error(f"⚠️ **À Éviter** : Facteurs défavorables pour 1+ {target_prop} ce soir.")
+        st.error(f"⚠️️ **À Éviter** : Facteurs défavorables pour 1+ {target_prop} ce soir.")
