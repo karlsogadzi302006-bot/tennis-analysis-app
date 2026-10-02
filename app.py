@@ -181,7 +181,12 @@ st.markdown("""
     <div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV du Circuit ATP</div>
 </div>
 """, unsafe_allow_html=True)
+# 3. CRÉATION DES ONGLETS (Après la config et le CSS)
+tab_tennis, tab_nhl = st.tabs(["🎾 Tennis ValueBet", "🏒 NHL Player Props"])
 
+# 4. CONTENU ONGLET TENNIS
+with tab_tennis:
+    # Colle ici tout le reste de ton code tennis existant
 
 # ---------------------------------------------------------
 # 3. MATRICE DE STYLES ET FONCTIONS UTILITAIRES
@@ -747,3 +752,94 @@ with m2_col:
             st.success("🟢 **RECOMMANDATION : OVER ACES**")
         else:
             st.info(f"🔵 **MARGE FAIBLE / NO BET** (Projeté : {total_projected_aces:.1f} Aces)")
+
+
+# =========================================================
+# 5. CONTENU ONGLET NHL PLAYER PROPS
+# =========================================================
+with tab_nhl:
+    st.markdown("<div class='main-title'>🏒 NHL Player Props Analyzer</div>", unsafe_allow_html=True)
+    st.markdown("<div class='sub-title'>Modèle prédictif 5 piliers : TOI, PP1, SOG, GA/G adverse & Contexte</div>", unsafe_allow_html=True)
+    st.write("")
+
+    # Fonctions de récupération API NHL
+    @st.cache_data(ttl=3600)
+    def fetch_nhl_leaders():
+        try:
+            res = requests.get("https://api-web.nhle.com/v1/skater-stats-leaders/current?categories=points&limit=50", timeout=10)
+            if res.status_code == 200:
+                return res.json().get('points', [])
+        except Exception:
+            pass
+        return []
+
+    leaders = fetch_nhl_leaders()
+
+    if leaders:
+        player_names = [f"{p['firstName']['default']} {p['lastName']['default']}" for p in leaders]
+
+        col1, col2 = st.columns(2)
+        with col1:
+            selected_player_name = st.selectbox("Sélectionner le joueur", player_names)
+            target_prop = st.radio("Type de Pari (Prop)", ["Point", "But", "Passe"], horizontal=True)
+            home_away = st.radio("Lieu du match", ["Domicile (Last Change)", "Extérieur"], horizontal=True)
+
+        with col2:
+            st.markdown("### 📊 Contexte Adversaire & Ligne")
+            opp_ga_g = st.slider("Moyenne Buts Alloués par l'Adversaire (GA/G)", 2.0, 4.5, 3.2, step=0.1)
+            opp_pk_pct = st.slider("Efficacité Penalty Kill Adverse (PK%)", 60.0, 90.0, 77.0, step=0.5)
+            is_pp1 = st.checkbox("Le joueur évolue sur l'Unité 1 d'Avantage Numérique (PP1)", value=True)
+
+        # Récupération des données du joueur sélectionné
+        selected_player = next(p for p in leaders if f"{p['firstName']['default']} {p['lastName']['default']}" == selected_player_name)
+        games = max(selected_player.get('gamesPlayed', 1), 1)
+        sog_pg = selected_player.get('shots', 0) / games
+        pts_pg = selected_player.get('points', 0) / games
+
+        # Algorithme de scoring basé sur les 5 critères
+        score = 50.0  # Base neutre
+
+        # Critère 1 & 3 : Volume et PP1
+        if is_pp1:
+            score += 12.0
+
+        # Critère 2 : Production individuelle
+        if target_prop == "But":
+            if sog_pg >= 3.5: score += 15.0
+            elif sog_pg >= 2.5: score += 8.0
+        elif target_prop in ["Passe", "Point"]:
+            if pts_pg >= 0.9: score += 15.0
+            elif pts_pg >= 0.6: score += 8.0
+
+        # Critère 4 : Adversaire & PK
+        if opp_ga_g >= 3.3: score += 10.0
+        elif opp_ga_g <= 2.4: score -= 8.0
+
+        if is_pp1 and opp_pk_pct < 76.0 and target_prop in ["Passe", "Point"]:
+            score += 8.0
+
+        # Critère 5 : Contexte (Domicile)
+        if home_away == "Domicile (Last Change)":
+            score += 5.0
+
+        score = min(max(round(score, 1), 10.0), 95.0)
+
+        st.markdown("---")
+
+        # Affichage des métriques principales
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric("Moyenne Tirs (SOG/Match)", f"{round(sog_pg, 2)}")
+        with c2:
+            st.metric("Moyenne Points/Match", f"{round(pts_pg, 2)}")
+        with c3:
+            st.metric(f"Score Confiance : {target_prop}", f"{score}%")
+
+        if score >= 70:
+            st.success(f"🔥 **ValueBet Forte** : {selected_player_name} pour 1+ {target_prop}.")
+        elif score >= 55:
+            st.info(f"🟡 **Opportunité Modérée** : {selected_player_name} pour 1+ {target_prop}.")
+        else:
+            st.error(f"⚠️ **À Éviter** : Facteurs défavorables pour 1+ {target_prop} ce soir.")
+    else:
+        st.warning("Impossible de charger les données NHL en direct pour le moment.")
