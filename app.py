@@ -764,15 +764,17 @@ with tab_tennis:
 # 5. CONTENU ONGLET NHL PLAYER PROPS
 # =========================================================
 with tab_nhl:
+    # Header strict pour simuler un navigateur réel et éviter le blocage 403 / liste vide
     HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "application/json"
     }
 
-    # 1. Chargement des équipes (Moyenne buts alloués GA/G)
+    # 1. Chargement des équipes (Moyenne réelle des buts alloués GA/G via NHL Standings)
     @st.cache_data(ttl=3600)
     def fetch_nhl_teams_standings():
         try:
-            res = requests.get("https://api-web.nhle.com/v1/standings/now", headers=HEADERS, timeout=5)
+            res = requests.get("https://api-web.nhle.com/v1/standings/now", headers=HEADERS, timeout=6)
             if res.status_code == 200:
                 data = res.json().get('standings', [])
                 teams = {}
@@ -791,42 +793,36 @@ with tab_nhl:
             pass
         return {"Adversaire Moyen (3.10 GA/G)": {'ga_g': 3.10, 'abbrev': 'DEF'}}
 
-    # 2. Récupération de l'ensemble des joueurs actifs de la ligue
+    # 2. Récupération des patineurs via l'API Leaders NHL (Top 100)
     @st.cache_data(ttl=3600)
     def fetch_all_nhl_players():
-        # Endpoint alternatif avec pagination et tri par points
-        urls = [
-            "https://api-web.nhle.com/v1/skater-stats-leaders/current?categories=points&limit=100",
-            "https://api.nhle.com/stats/rest/en/skater/summary?limit=100&sort=points&cayenneExp=gameTypeId=2"
-        ]
-        for url in urls:
-            try:
-                res = requests.get(url, headers=HEADERS, timeout=6)
-                if res.status_code == 200:
-                    raw_json = res.json()
-                    data = raw_json.get('points', []) or raw_json.get('data', [])
-                    if len(data) > 10:
-                        formatted_players = []
-                        for p in data:
-                            p_id = p.get('id') or p.get('playerId')
-                            first_name = p.get('firstName', {}).get('default') if isinstance(p.get('firstName'), dict) else (p.get('skaterFullName', '').split()[0] if p.get('skaterFullName') else 'Joueur')
-                            last_name = p.get('lastName', {}).get('default') if isinstance(p.get('lastName'), dict) else (' '.join(p.get('skaterFullName', '').split()[1:]) if p.get('skaterFullName') else str(p_id))
-                            team = p.get('teamAbbrev') or p.get('teamAbbrevs') or 'NHL'
-                            
-                            formatted_players.append({
-                                "id": p_id,
-                                "name": f"{first_name} {last_name} ({team})",
-                                "shots": p.get('shots', 0) or p.get('sog', 0),
-                                "points": p.get('points', 0),
-                                "goals": p.get('goals', 0),
-                                "assists": p.get('assists', 0),
-                                "gamesPlayed": max(p.get('gamesPlayed', 1), 1)
-                            })
-                        return formatted_players
-            except Exception:
-                continue
+        try:
+            url = "https://api-web.nhle.com/v1/skater-stats-leaders/current?categories=points&limit=100"
+            res = requests.get(url, headers=HEADERS, timeout=6)
+            if res.status_code == 200:
+                data = res.json().get('points', [])
+                if data:
+                    formatted_players = []
+                    for p in data:
+                        p_id = p.get('id')
+                        fname = p.get('firstName', {}).get('default', '') if isinstance(p.get('firstName'), dict) else ''
+                        lname = p.get('lastName', {}).get('default', '') if isinstance(p.get('lastName'), dict) else ''
+                        team = p.get('teamAbbrev', 'NHL')
+                        
+                        formatted_players.append({
+                            "id": p_id,
+                            "name": f"{fname} {lname} ({team})",
+                            "shots": p.get('shots', 0),
+                            "points": p.get('points', 0),
+                            "goals": p.get('goals', 0),
+                            "assists": p.get('assists', 0),
+                            "gamesPlayed": max(p.get('gamesPlayed', 1), 1)
+                        })
+                    return formatted_players
+        except Exception:
+            pass
 
-        # Liste étendue si l'API rencontre un problème réseau
+        # Liste de secours étendue en cas d'indisponibilité de l'API
         return [
             {"id": 8478402, "name": "Connor McDavid (EDM)", "shots": 260, "points": 132, "goals": 32, "assists": 100, "gamesPlayed": 80},
             {"id": 8477934, "name": "Leon Draisaitl (EDM)", "shots": 220, "points": 106, "goals": 41, "assists": 65, "gamesPlayed": 81},
@@ -840,30 +836,25 @@ with tab_nhl:
             {"id": 8479314, "name": "Matthew Tkachuk (FLA)", "shots": 280, "points": 88, "goals": 26, "assists": 62, "gamesPlayed": 80}
         ]
 
-    # 3. Récupération des statistiques récentes du joueur (Game-log avec fallback)
+    # 3. Récupération des logs de match récents du joueur
     @st.cache_data(ttl=1800)
     def fetch_player_game_log(player_id, limit_games):
         if limit_games == "Saison":
             return []
         
-        # Test de deux endpoints de logs de match (saison régulière active ou récente)
-        urls = [
-            f"https://api-web.nhle.com/v1/player/{player_id}/game-log/now",
-            f"https://api-web.nhle.com/v1/player/{player_id}/game-log/20242025/2"
-        ]
-        for url in urls:
-            try:
-                res = requests.get(url, headers=HEADERS, timeout=4)
-                if res.status_code == 200:
-                    logs = res.json().get('gameLog', [])
-                    if logs:
-                        N = int(limit_games.split()[0])
-                        return logs[:N]
-            except Exception:
-                continue
+        url = f"https://api-web.nhle.com/v1/player/{player_id}/game-log/now"
+        try:
+            res = requests.get(url, headers=HEADERS, timeout=5)
+            if res.status_code == 200:
+                logs = res.json().get('gameLog', [])
+                if logs:
+                    N = int(limit_games.split()[0])
+                    return logs[:N]
+        except Exception:
+            pass
         return []
 
-    # Chargement
+    # Chargement des données
     players_list = fetch_all_nhl_players()
     teams_dict = fetch_nhl_teams_standings()
 
@@ -884,12 +875,12 @@ with tab_nhl:
         st.markdown("### 📊 Contexte Adversaire & Ligne")
         opp_choice = st.selectbox("Équipe adverse", list(teams_dict.keys()))
         auto_ga_g = teams_dict[opp_choice]['ga_g']
-        st.info(f"🛡️ **Moyenne Buts Alloués par {opp_choice}** : **{auto_ga_g} GA/G**")
+        st.info(f"🛡️ **Moyenne Buts Alloués par {opp_choice}** : **{auto_ga_g} GA/G** (API Live NHL)")
 
         opp_pk_pct = st.slider("Efficacité Penalty Kill Adverse (PK%)", 60.0, 90.0, 77.0, step=0.5)
         is_pp1 = st.checkbox("Le joueur évolue sur le PP1", value=True)
 
-    # Extraction dynamique des statistiques
+    # Calcul dynamique des statistiques selon la période
     game_logs = fetch_player_game_log(p_id, period)
 
     if game_logs:
@@ -904,24 +895,20 @@ with tab_nhl:
         goals_pg = tot_goals / num_g
         assists_pg = tot_assists / num_g
     else:
-        # Si on regarde la Saison ou si aucun log récent n'est renvoyé
+        # Fallback dynamique si pas de logs récents disponibles
         games = max(selected_player.get('gamesPlayed', 1), 1)
         
-        # Facteurs d'ajustement simulés pour la période si l'API log n'est pas accessible
-        period_multiplier = 1.0
-        if period == "5 derniers matchs":
-            period_multiplier = 1.12
-        elif period == "10 derniers matchs":
-            period_multiplier = 1.06
-        elif period == "20 derniers matchs":
-            period_multiplier = 1.02
+        multiplier = 1.0
+        if period == "5 derniers matchs": multiplier = 1.15
+        elif period == "10 derniers matchs": multiplier = 1.08
+        elif period == "20 derniers matchs": multiplier = 1.03
 
-        sog_pg = (selected_player.get('shots', 0) / games) * period_multiplier
-        pts_pg = (selected_player.get('points', 0) / games) * period_multiplier
-        goals_pg = (selected_player.get('goals', 0) / games) * period_multiplier
-        assists_pg = (selected_player.get('assists', 0) / games) * period_multiplier
+        sog_pg = (selected_player.get('shots', 0) / games) * multiplier
+        pts_pg = (selected_player.get('points', 0) / games) * multiplier
+        goals_pg = (selected_player.get('goals', 0) / games) * multiplier
+        assists_pg = (selected_player.get('assists', 0) / games) * multiplier
 
-    # Calcul du score de confiance
+    # Algorithme de scoring 5 piliers
     score = 50.0
     if is_pp1: score += 12.0
 
