@@ -792,6 +792,7 @@ with tab_tennis:
 # =========================================================
 # 5. CONTENU ONGLET NHL PLAYER PROPS
 # =========================================================with tab_nhl:
+
 with tab_nhl:
     st.markdown("<h2 style='text-align:center;color:#a855f7;'>🏒 NHL Player Props Analyzer</h2>",
                 unsafe_allow_html=True)
@@ -810,6 +811,13 @@ with tab_nhl:
     LEAGUE_AVG_GA = 3.05
     PRIOR_GAMES = 20  # poids de la saison précédente, en "matchs équivalents"
     STAT_KEY = {"Point": "points", "But": "goals", "Passe": "assists"}
+    GAME_TYPE_LABEL = {1: "Présaison", 2: "Saison", 3: "Séries"}
+    MATCH_TYPES = {
+        "Saison régulière seulement": [2],
+        "Saison + présaison": [2, 1],
+        "Saison + séries": [2, 3],
+        "Tous les matchs (présaison, saison, séries)": [1, 2, 3],
+    }
     STATS = ["goals", "assists", "points", "shots", "ppPoints"]
     TEAM_ABBREVS = ["ANA", "BOS", "BUF", "CGY", "CAR", "CHI", "COL", "CBJ", "DAL", "DET",
                     "EDM", "FLA", "LAK", "MIN", "MTL", "NSH", "NJD", "NYI", "NYR", "OTT",
@@ -963,21 +971,26 @@ with tab_nhl:
 
     # ---------- 3. Game logs (saison en cours puis précédente) ----------
     @st.cache_data(ttl=900)
-    def fetch_player_game_log(player_id, season_id):
+    def fetch_player_game_log(player_id, season_id, game_type):
+        # game_type : 1 = présaison, 2 = saison régulière, 3 = séries
         try:
-            url = f"{API_WEB}/player/{player_id}/game-log/{season_id}/2"
+            url = f"{API_WEB}/player/{player_id}/game-log/{season_id}/{game_type}"
             res = requests.get(url, headers=HEADERS, timeout=10)
             if res.status_code == 200:
                 logs = res.json().get("gameLog", [])
                 for g in logs:
                     g["season"] = season_label(season_id)
+                    g["gtype"] = GAME_TYPE_LABEL[game_type]
                 return logs
         except Exception:
             pass
         return []
 
-    def combined_logs(player_id, cur_s, prev_s):
-        logs = fetch_player_game_log(player_id, cur_s) + fetch_player_game_log(player_id, prev_s)
+    def combined_logs(player_id, cur_s, prev_s, game_types):
+        logs = []
+        for s in (cur_s, prev_s):
+            for gt in game_types:
+                logs += fetch_player_game_log(player_id, s, gt)
         return sorted(logs, key=lambda g: g.get("gameDate", ""), reverse=True)
 
     def filter_logs(logs, period, home_away):
@@ -1056,6 +1069,7 @@ with tab_nhl:
                            f"{player['prev_gp']} m., {player['prev_points']} pts")
                 period = st.selectbox("Forme récente", ["5 derniers matchs", "10 derniers matchs",
                                                         "20 derniers matchs", "Saison"], index=1)
+                match_type = st.selectbox("Matchs pris en compte pour la forme", list(MATCH_TYPES))
                 prop = st.radio("Pari", ["Point", "But", "Passe"], horizontal=True)
                 home_away = st.radio("Lieu", ["Tout", "Domicile", "Extérieur"], horizontal=True)
 
@@ -1071,7 +1085,7 @@ with tab_nhl:
                 is_pp1 = st.checkbox("Joueur sur le PP1", value=pp_rate > 0.25)
                 odds = st.number_input("Cote du bookmaker (décimale)", 1.01, 50.0, 2.00, step=0.05)
 
-            all_logs = combined_logs(player["id"], cur_s, prev_s)
+            all_logs = combined_logs(player["id"], cur_s, prev_s, MATCH_TYPES[match_type])
             if period == "Saison":  # "Saison" = saison en cours seulement (si elle a commencé)
                 cur_only = [g for g in all_logs if g["season"] == season_label(cur_s)]
                 all_logs = cur_only or all_logs
@@ -1107,7 +1121,8 @@ with tab_nhl:
             if logs:
                 with st.expander("Matchs utilisés pour la forme"):
                     st.dataframe([{
-                        "Saison": g.get("season"), "Date": g.get("gameDate"),
+                        "Saison": g.get("season"), "Type": g.get("gtype"),
+                        "Date": g.get("gameDate"),
                         "Adv.": g.get("opponentAbbrev"), "Lieu": g.get("homeRoadFlag"),
                         "B": g.get("goals"), "A": g.get("assists"), "Pts": g.get("points"),
                         "Tirs": g.get("shots"), "TOI": g.get("toi"),
