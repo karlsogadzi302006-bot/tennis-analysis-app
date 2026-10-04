@@ -11,182 +11,258 @@ import requests
 
 
 # ---------------------------------------------------------
-# 1. CONFIGURATION DE PAGE OBLIGATOIRE
+# 1. CONFIGURATION DE PAGE
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="Tennis ValueBet AI — Analytics ATP",
-    page_icon="🎾",
+    page_title="Sports ValueBet AI — Tennis & NHL",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # ---------------------------------------------------------
-# 2. DESIGN CSS "CYBER PURPLE NEON & GLASSMORPHISM" COMPLET
+# 2. DESIGN "AURORA GLASS" — responsive mobile / desktop
 # ---------------------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+:root {
+  --bg: #07080f;
+  --card: rgba(255,255,255,0.045);
+  --card-strong: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.09);
+  --violet: #a78bfa;
+  --violet-2: #7c3aed;
+  --pink: #f472b6;
+  --cyan: #22d3ee;
+  --green: #34d399;
+  --red: #fb7185;
+  --amber: #fbbf24;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --radius: 16px;
+}
+html, body, [class*="css"], .stApp {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  color: var(--text) !important;
+}
+.stApp {
+  background:
+    radial-gradient(900px 500px at 12% -8%, rgba(124,58,237,0.28), transparent 60%),
+    radial-gradient(800px 480px at 95% 0%, rgba(34,211,238,0.14), transparent 60%),
+    radial-gradient(700px 500px at 50% 110%, rgba(244,114,182,0.12), transparent 60%),
+    var(--bg) !important;
+  background-attachment: fixed !important;
+}
+header[data-testid="stHeader"] { background: transparent !important; }
+footer { visibility: hidden; }
+.block-container {
+  padding: 1.2rem 1rem 3rem 1rem !important;
+  max-width: 1180px !important;
+}
 
-    /* CONFIGURATION GLOBALE */
-    html, body, [class*="css"], .stApp {
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        background-color: #070913 !important;
-        color: #f1f5f9 !important;
-    }
+/* ---------- HERO ---------- */
+.hero-container {
+  position: relative;
+  text-align: center;
+  padding: 34px 18px 28px 18px;
+  margin: 0 auto 22px auto;
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(124,58,237,0.20), rgba(15,23,42,0.55) 55%, rgba(34,211,238,0.10));
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px -20px rgba(124,58,237,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+.hero-pill {
+  display: inline-block;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #ddd6fe; background: rgba(167,139,250,0.14);
+  border: 1px solid rgba(167,139,250,0.35);
+  padding: 5px 12px; border-radius: 999px; margin-bottom: 14px;
+}
+.main-title {
+  font-size: clamp(1.9rem, 7vw, 3.3rem);
+  font-weight: 900; line-height: 1.1; letter-spacing: -0.02em;
+  margin: 0 auto 10px auto;
+  background: linear-gradient(120deg, #ffffff 0%, #ddd6fe 35%, #a78bfa 62%, #22d3ee 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.sub-title {
+  font-size: clamp(0.85rem, 3.2vw, 1.05rem);
+  color: #cbd5e1; max-width: 640px; margin: 0 auto;
+  font-weight: 500; line-height: 1.55;
+}
+.hero-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+.hero-chips span {
+  font-size: 0.78rem; font-weight: 600; color: #e2e8f0;
+  background: var(--card); border: 1px solid var(--border);
+  padding: 6px 12px; border-radius: 999px;
+}
 
-    .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 2rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        max-width: 1200px !important;
-    }
+/* ---------- ONGLETS (pilules, défilables sur mobile) ---------- */
+div[data-testid="stTabs"] [role="tablist"] {
+  gap: 8px; border-bottom: none !important;
+  overflow-x: auto; scrollbar-width: none; padding: 4px 2px 10px 2px;
+}
+div[data-testid="stTabs"] [role="tablist"]::-webkit-scrollbar { display: none; }
+div[data-testid="stTabs"] button[role="tab"] {
+  flex: 1 1 auto; min-height: 46px; white-space: nowrap;
+  padding: 8px 20px !important; border-radius: 999px !important;
+  background: var(--card) !important; border: 1px solid var(--border) !important;
+  color: var(--muted) !important; font-weight: 700 !important;
+  transition: all .2s ease;
+}
+div[data-testid="stTabs"] button[role="tab"] p { font-size: 0.95rem !important; font-weight: 700 !important; }
+div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+  background: linear-gradient(135deg, #7c3aed, #a855f7 60%, #ec4899) !important;
+  border-color: transparent !important; color: #fff !important;
+  box-shadow: 0 8px 24px -8px rgba(168,85,247,0.8);
+}
+div[data-testid="stTabs"] [data-baseweb="tab-highlight"],
+div[data-testid="stTabs"] [data-baseweb="tab-border"] { display: none !important; }
 
-    /* HERO BANNER AVEC GLOW NEON VIOLET CENTRÉ */
-    .hero-container {
-        text-align: center !important;
-        justify-content: center !important;
-        align-items: center !important;
-        padding: 35px 15px 30px 15px !important;
-        margin: 0 auto 30px auto !important;
-        background: radial-gradient(circle at 50% 30%, rgba(168, 85, 247, 0.25) 0%, rgba(124, 58, 237, 0.08) 45%, rgba(7, 9, 19, 0) 80%) !important;
-        border-radius: 20px !important;
-        border: 1px solid rgba(168, 85, 247, 0.2) !important;
-        box-shadow: 0 0 50px -10px rgba(147, 51, 234, 0.3) !important;
-    }
+/* ---------- TITRES ---------- */
+h1, h2, h3 { letter-spacing: -0.01em; font-weight: 800 !important; }
+h3 { font-size: 1.2rem !important; }
+[class^="cat-title"] {
+  font-size: 1.15rem; font-weight: 800; margin: 26px 0 12px 0;
+  padding-left: 12px; border-left: 4px solid currentColor; line-height: 1.3;
+}
+.cat-title-matchup { color: #fb7185; }
+.cat-title-service { color: #38bdf8; }
+.cat-title-h2h { color: #c4b5fd; }
+.cat-title-valuebet { color: #fbbf24; }
+.cat-title-annexes { color: #34d399; }
 
-    .main-title {
-        font-size: clamp(2.0rem, 6vw, 3.2rem) !important;
-        font-weight: 900 !important;
-        line-height: 1.15 !important;
-        text-align: center !important;
-        margin: 0 auto 12px auto !important;
-        background: linear-gradient(135deg, #ffffff 10%, #d8b4fe 50%, #c084fc 100%) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        filter: drop-shadow(0 0 18px rgba(192, 132, 252, 0.65)) !important;
-        display: block !important;
-    }
+/* ---------- CARTES JOUEURS ---------- */
+.player-header-a, .player-header-b {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 8px;
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.player-header-a {
+  border: 1px solid rgba(251,113,133,0.45);
+  background: linear-gradient(135deg, rgba(251,113,133,0.16), rgba(15,23,42,0.55));
+  box-shadow: 0 10px 30px -14px rgba(251,113,133,0.6);
+}
+.player-header-b {
+  border: 1px solid rgba(52,211,153,0.45);
+  background: linear-gradient(135deg, rgba(52,211,153,0.16), rgba(15,23,42,0.55));
+  box-shadow: 0 10px 30px -14px rgba(52,211,153,0.6);
+}
+.player-name-a { color: #fda4af !important; font-weight: 800; font-size: 1.15rem; }
+.player-name-b { color: #6ee7b7 !important; font-weight: 800; font-size: 1.15rem; }
+.style-badge-a, .style-badge-b {
+  border-radius: 999px; padding: 4px 12px; font-size: 0.76rem; font-weight: 700;
+}
+.style-badge-a { background: rgba(251,113,133,0.18); color: #fecdd3; border: 1px solid rgba(251,113,133,0.4); }
+.style-badge-b { background: rgba(52,211,153,0.18); color: #bbf7d0; border: 1px solid rgba(52,211,153,0.4); }
 
-    .sub-title {
-        font-size: clamp(0.85rem, 3vw, 1.05rem) !important;
-        color: #cbd5e1 !important;
-        text-align: center !important;
-        margin: 0 auto !important;
-        max-width: 600px !important;
-        font-weight: 500 !important;
-        line-height: 1.5 !important;
-        text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
-    }
+/* ---------- MÉTRIQUES ---------- */
+div[data-testid="stMetric"] {
+  background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025)) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  padding: 14px 14px 12px 14px !important;
+  box-shadow: 0 10px 28px -16px rgba(0,0,0,0.8);
+  transition: transform .15s ease, border-color .15s ease;
+}
+div[data-testid="stMetric"]:hover { transform: translateY(-2px); border-color: rgba(167,139,250,0.5) !important; }
+div[data-testid="stMetricLabel"] p { color: var(--muted) !important; font-size: 0.78rem !important; font-weight: 600 !important; }
+div[data-testid="stMetricValue"] { font-size: 1.45rem !important; font-weight: 800 !important; color: #fff !important; }
 
-    /* TITRES DE SECTIONS */
-    .cat-title-matchup { color: #f43f5e; font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.4)); }
-    .cat-title-service { color: #38bdf8; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
-    .cat-title-h2h { color: #c084fc; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.4)); }
-    .cat-title-valuebet { color: #fbbf24; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4)); }
-    .cat-title-annexes { color: #34d399; font-size: 1.25rem; font-weight: 800; margin-top: 25px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.4)); }
+/* ---------- BOÎTES & CARTES ---------- */
+.analysis-box {
+  background: linear-gradient(135deg, rgba(124,58,237,0.14), rgba(15,23,42,0.6));
+  border: 1px solid rgba(167,139,250,0.28);
+  border-left: 4px solid var(--violet);
+  padding: 14px 18px; border-radius: 14px; margin: 14px 0;
+  font-size: 0.93rem; line-height: 1.6;
+}
+.card-service { padding: 4px 0; }
+.ev-card-success, .ev-card-danger {
+  border-radius: var(--radius); padding: 14px; margin-bottom: 12px; font-weight: 600;
+}
+.ev-card-success {
+  border: 1px solid rgba(52,211,153,0.6);
+  background: linear-gradient(135deg, rgba(52,211,153,0.16), rgba(15,23,42,0.5));
+  box-shadow: 0 0 28px -8px rgba(52,211,153,0.45);
+}
+.ev-card-danger {
+  border: 1px solid rgba(251,113,133,0.55);
+  background: linear-gradient(135deg, rgba(251,113,133,0.14), rgba(15,23,42,0.5));
+  box-shadow: 0 0 28px -10px rgba(251,113,133,0.4);
+}
 
-    /* CARTES DES JOUEURS (EN-TÊTE JOUEUR A ET B) */
-    .player-header-a {
-        border: 1.5px solid rgba(244, 63, 94, 0.5) !important;
-        background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
-        border-radius: 10px !important;
-        padding: 12px 16px !important;
-        margin-bottom: 10px !important;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+/* ---------- CHAMPS (zones tactiles confortables) ---------- */
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"] > div,
+div[data-testid="stNumberInput"] input {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important; min-height: 46px;
+}
+div[data-baseweb="select"] > div:focus-within,
+div[data-baseweb="input"] > div:focus-within { border-color: var(--violet) !important; box-shadow: 0 0 0 3px rgba(167,139,250,0.25) !important; }
+label, [data-testid="stWidgetLabel"] p { color: #cbd5e1 !important; font-weight: 600 !important; font-size: 0.88rem !important; }
+div[role="radiogroup"] { gap: 8px; flex-wrap: wrap; }
+div[role="radiogroup"] label {
+  background: var(--card); border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: 999px; min-height: 40px;
+}
+div[role="radiogroup"] label:has(input:checked) {
+  background: rgba(167,139,250,0.2); border-color: var(--violet);
+}
+.stButton > button {
+  min-height: 46px; border-radius: 12px; font-weight: 700;
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important; color: #fff !important;
+  border: none !important; box-shadow: 0 8px 22px -10px rgba(168,85,247,0.9);
+}
+.stButton > button:hover { filter: brightness(1.1); }
+div[data-testid="stAlert"] { border-radius: 14px; border: 1px solid var(--border); }
+div[data-testid="stExpander"] {
+  background: var(--card); border: 1px solid var(--border) !important; border-radius: 14px;
+}
+div[data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
+hr { border-color: var(--border) !important; margin: 1.4rem 0 !important; }
 
-    .player-header-b {
-        border: 1.5px solid rgba(16, 185, 129, 0.5) !important;
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
-        border-radius: 10px !important;
-        padding: 12px 16px !important;
-        margin-bottom: 10px !important;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .player-name-a { color: #fb7185 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
-    .player-name-b { color: #34d399 !important; font-weight: 800 !important; font-size: 1.2rem !important; }
-
-    .style-badge-a {
-        background-color: rgba(244, 63, 94, 0.2) !important;
-        color: #fda4af !important;
-        border: 1px solid rgba(244, 63, 94, 0.4) !important;
-        border-radius: 6px !important;
-        padding: 3px 10px !important;
-        font-size: 0.8rem !important;
-        font-weight: 600 !important;
-    }
-
-    .style-badge-b {
-        background-color: rgba(16, 185, 129, 0.2) !important;
-        color: #a7f3d0 !important;
-        border: 1px solid rgba(16, 185, 129, 0.4) !important;
-        border-radius: 6px !important;
-        padding: 3px 10px !important;
-        font-size: 0.8rem !important;
-        font-weight: 600 !important;
-    }
-
-    /* CARTES MÉTRIQUES & GRILLES */
-    div[data-testid="stMetric"] {
-        background: linear-gradient(145deg, rgba(20, 27, 45, 0.9) 0%, rgba(13, 17, 30, 0.95) 100%) !important;
-        border: 1px solid rgba(168, 85, 247, 0.2) !important;
-        border-radius: 12px !important;
-        padding: 12px !important;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
-    }
-
-    div[data-testid="stMetricValue"] {
-        font-size: 1.4rem !important;
-        font-weight: 800 !important;
-        color: #ffffff !important;
-    }
-
-    /* BOX D'ANALYSE */
-    .analysis-box {
-        background: linear-gradient(135deg, rgba(147, 51, 234, 0.12) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
-        border: 1px solid rgba(168, 85, 247, 0.35) !important;
-        border-left: 4px solid #a855f7 !important;
-        padding: 14px 18px !important;
-        border-radius: 10px !important;
-        margin-top: 15px !important;
-        margin-bottom: 15px !important;
-        font-size: 0.92rem !important;
-    }
-
-    /* VALUEBET TERMINAL CARDS */
-    .ev-card-success {
-        border: 1.5px solid #10b981 !important;
-        background: rgba(16, 185, 129, 0.1) !important;
-        box-shadow: 0 0 12px rgba(16, 185, 129, 0.2) !important;
-        border-radius: 8px !important;
-        padding: 12px !important;
-        margin-bottom: 10px !important;
-    }
-
-    .ev-card-danger {
-        border: 1.5px solid #f43f5e !important;
-        background: rgba(244, 63, 94, 0.1) !important;
-        box-shadow: 0 0 12px rgba(244, 63, 94, 0.15) !important;
-        border-radius: 8px !important;
-        padding: 12px !important;
-        margin-bottom: 10px !important;
-    }
+/* ---------- MOBILE ---------- */
+@media (max-width: 640px) {
+  .block-container { padding: 0.6rem 0.65rem 3rem 0.65rem !important; }
+  .hero-container { padding: 24px 12px 20px 12px; border-radius: 20px; margin-bottom: 16px; }
+  .hero-chips span { font-size: 0.72rem; padding: 5px 10px; }
+  div[data-testid="stTabs"] button[role="tab"] { padding: 8px 14px !important; }
+  div[data-testid="stTabs"] button[role="tab"] p { font-size: 0.88rem !important; }
+  [class^="cat-title"] { font-size: 1.02rem; margin-top: 20px; }
+  .player-name-a, .player-name-b { font-size: 1.02rem; }
+  div[data-testid="stMetricValue"] { font-size: 1.2rem !important; }
+  /* les métriques s'affichent en grille 2 colonnes au lieu d'une pile */
+  div[data-testid="stHorizontalBlock"] { flex-wrap: wrap !important; gap: 0.6rem !important; }
+  div[data-testid="stColumn"]:has(div[data-testid="stMetric"]) {
+    flex: 1 1 calc(50% - 0.6rem) !important;
+    min-width: calc(50% - 0.6rem) !important;
+    width: calc(50% - 0.6rem) !important;
+  }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+  .block-container { padding: 1rem 1rem 3rem 1rem !important; }
+}
 </style>
-
-<!-- HEADER HERO VIOLET NEON -->
-<div class='hero-container'>
-    <div class='main-title'>🎾 Tennis ValueBet AI Pro</div>
-    <div class='sub-title'>Plateforme d'Analyse Prédictive & Détection +EV du Circuit ATP</div>
+<div class="hero-container">
+<div class="hero-pill">⚡ Analytics &amp; +EV</div>
+<div class="main-title">Sports ValueBet AI</div>
+<div class="sub-title">Plateforme d'analyse prédictive et de détection de value bets : tennis ATP et props joueurs NHL.</div>
+<div class="hero-chips"><span>🎾 Tennis ATP</span><span>🏒 NHL Props</span><span>📈 Modèles probabilistes</span><span>💰 Espérance de gain</span></div>
 </div>
 """, unsafe_allow_html=True)
-# 3. CRÉATION DES ONGLETS (Après la config et le CSS)
-tab_tennis, tab_nhl = st.tabs(["🎾 Tennis ValueBet", "🏒 NHL Player Props"])
+
+# 3. CRÉATION DES ONGLETS (après la config et le CSS)
+tab_tennis, tab_nhl = st.tabs(["🎾 Tennis", "🏒 NHL Props"])
+
 
 # 4. CONTENU ONGLET TENNIS
 with tab_tennis:
